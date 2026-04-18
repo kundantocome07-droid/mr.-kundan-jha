@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sara Aakash — Rajendra Yadav</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet"/>
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Google Maps API — replace YOUR_GOOGLE_MAPS_API_KEY with your actual key -->
+  <script>
+    window.googleMapsLoaded = false;
+    function initGoogleMaps() {
+      window.googleMapsLoaded = true;
+      if (window._mapsReadyCallback) window._mapsReadyCallback();
+    }
+  </script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&callback=initGoogleMaps"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Tiro Devanagari Hindi', serif; background: #0a0f1e; color: #e8eaf6; min-height: 100vh; }
+
+    /* ─── OVERLAYS ─── */
+    .overlay { position: fixed; inset: 0; background: rgba(5,8,20,0.97); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s ease; }
+    .overlay.hide { opacity: 0; pointer-events: none; }
+    .overlay-box { background: #0e1730; border: 1px solid rgba(100,149,237,0.35); border-radius: 16px; padding: 2rem 2.5rem; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    .overlay-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+    .overlay-title { font-size: 1.3rem; color: #c5cae9; margin-bottom: 0.4rem; font-weight: 700; font-family: 'Playfair Display', serif; }
+    .overlay-sub { font-size: 13px; color: rgba(197,202,233,0.6); margin-bottom: 1.5rem; line-height: 1.6; font-family: sans-serif; }
+    .inp { width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(100,149,237,0.3); border-radius: 8px; color: #e8eaf6; font-size: 14px; font-family: sans-serif; margin-bottom: 10px; outline: none; transition: border 0.2s; }
+    .inp:focus { border-color: #6495ed; }
+    .inp:disabled { opacity: 0.4; }
+    .btn-primary { width: 100%; padding: 11px; background: rgba(100,149,237,0.18); border: 1.5px solid #6495ed; border-radius: 8px; color: #90caf9; font-size: 14px; font-family: sans-serif; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+    .btn-primary:hover { background: rgba(100,149,237,0.32); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .err-msg { font-size: 12px; color: #ef9a9a; margin-top: 8px; min-height: 16px; font-family: sans-serif; }
+    .success-msg { font-size: 13px; color: #a5d6a7; margin-top: 8px; min-height: 16px; font-family: sans-serif; }
+    .skip-link { display: block; text-align: center; margin-top: 12px; font-size: 12px; color: rgba(197,202,233,0.45); cursor: pointer; text-decoration: underline; font-family: sans-serif; }
+    .skip-link:hover { color: rgba(197,202,233,0.7); }
+    .timer-bar-wrap { width: 100%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-bottom: 1.2rem; overflow: hidden; }
+    .timer-bar { height: 100%; background: #6495ed; border-radius: 4px; transition: width 1s linear; }
+    .timer-txt { font-size: 12px; color: rgba(197,202,233,0.6); margin-bottom: 0.6rem; font-family: sans-serif; }
+
+    /* ─── GOOGLE SIGN IN BUTTON ─── */
+    .google-signin-btn {
+      width: 100%; padding: 11px 16px; background: #fff; border: none; border-radius: 8px;
+      color: #3c4043; font-size: 14px; font-family: sans-serif; cursor: pointer;
+      transition: all 0.2s; font-weight: 600; display: flex; align-items: center;
+      justify-content: center; gap: 10px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.3);
+    }
+    .google-signin-btn:hover { background: #f8f9fa; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+    .google-logo { width: 18px; height: 18px; }
+
+    /* ─── LOCATION CONSENT POPUP ─── */
+    #loc-consent-overlay { position: fixed; inset: 0; background: rgba(5,8,20,0.85); display: none; align-items: center; justify-content: center; z-index: 9800; }
+    #loc-consent-overlay.show { display: flex; }
+    .loc-browser-box { background: #131d3a; border: 1px solid rgba(100,149,237,0.4); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; box-shadow: 0 12px 50px rgba(0,0,0,0.7); overflow: hidden; }
+    .loc-browser-header { background: #0e1730; padding: 1rem 1.2rem 0.8rem; border-bottom: 1px solid rgba(100,149,237,0.15); display: flex; align-items: center; gap: 10px; }
+    .loc-site-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(100,149,237,0.2); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .loc-site-name { font-size: 13px; color: #c5cae9; font-family: sans-serif; font-weight: 600; }
+    .loc-site-url { font-size: 11px; color: rgba(197,202,233,0.4); font-family: sans-serif; }
+    .loc-body { padding: 1.2rem 1.4rem; }
+    .loc-title { font-size: 15px; color: #c5cae9; font-weight: 700; margin-bottom: 0.5rem; font-family: 'Playfair Display', serif; }
+    .loc-desc { font-size: 12.5px; color: rgba(197,202,233,0.65); line-height: 1.7; margin-bottom: 1.2rem; font-family: sans-serif; }
+    .loc-perms { margin-bottom: 1.2rem; }
+    .loc-perm-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px; }
+    .loc-perm-icon { font-size: 16px; }
+    .loc-perm-text { font-size: 12.5px; color: rgba(197,202,233,0.75); font-family: sans-serif; flex: 1; }
+    .loc-actions { display: flex; flex-direction: column; gap: 8px; }
+    .loc-btn-allow { padding: 10px; background: #3f5fb0; border: none; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; font-family: sans-serif; transition: background 0.2s; }
+    .loc-btn-allow:hover { background: #4a70c4; }
+    .loc-btn-allow-once { padding: 10px; background: rgba(100,149,237,0.12); border: 1px solid rgba(100,149,237,0.35); border-radius: 8px; color: #90caf9; font-size: 13px; font-weight: 600; cursor: pointer; font-family: sans-serif; transition: all 0.2s; }
+    .loc-btn-allow-once:hover { background: rgba(100,149,237,0.22); }
+    .loc-btn-deny { padding: 10px; background: transparent; border: 1px solid rgba(197,202,233,0.15); border-radius: 8px; color: rgba(197,202,233,0.5); font-size: 13px; cursor: pointer; font-family: sans-serif; transition: all 0.2s; }
+    .loc-btn-deny:hover { background: rgba(255,255,255,0.04); color: rgba(197,202,233,0.7); }
+    .loc-footer { padding: 0.7rem 1.4rem 1rem; font-size: 11px; color: rgba(197,202,233,0.3); font-family: sans-serif; text-align: center; }
+
+    /* ─── CAMERA CONSENT OVERLAY ─── */
+    #cam-consent-overlay { position: fixed; inset: 0; background: rgba(5,8,20,0.92); display: none; align-items: center; justify-content: center; z-index: 9700; }
+    #cam-consent-overlay.show { display: flex; }
+    .cam-box { background: #0e1730; border: 1px solid rgba(100,149,237,0.35); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; overflow: hidden; box-shadow: 0 12px 50px rgba(0,0,0,0.7); }
+    .cam-header { background: #131d3a; padding: 1rem 1.4rem; border-bottom: 1px solid rgba(100,149,237,0.15); }
+    .cam-title { font-size: 1rem; color: #c5cae9; font-weight: 700; font-family: 'Playfair Display', serif; margin-bottom: 3px; }
+    .cam-sub { font-size: 11.5px; color: rgba(197,202,233,0.45); font-family: sans-serif; }
+    .cam-body { padding: 1.2rem 1.4rem; }
+    .cam-notice { background: rgba(100,149,237,0.07); border: 0.5px solid rgba(100,149,237,0.25); border-radius: 10px; padding: 1rem; margin-bottom: 1rem; }
+    .cam-notice-title { font-size: 13px; color: #90caf9; font-weight: 700; font-family: sans-serif; margin-bottom: 4px; }
+    .cam-notice-text { font-size: 12px; color: rgba(197,202,233,0.65); font-family: sans-serif; line-height: 1.7; }
+    .cam-perm-list { margin-bottom: 1.1rem; }
+    .cam-perm-item { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-bottom: 0.5px solid rgba(100,149,237,0.08); font-family: sans-serif; font-size: 12px; color: rgba(197,202,233,0.7); }
+    .cam-perm-item:last-child { border: none; }
+    .cam-perm-item span:first-child { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+    #cam-video-wrap { display: none; margin-bottom: 1rem; border-radius: 10px; overflow: hidden; position: relative; }
+    #cam-video { width: 100%; border-radius: 10px; background: #000; display: block; }
+    #cam-capture-btn { width: 100%; padding: 10px; background: rgba(165,214,167,0.15); border: 1px solid rgba(165,214,167,0.4); border-radius: 8px; color: #a5d6a7; font-size: 13px; font-weight: 700; cursor: pointer; font-family: sans-serif; transition: all 0.2s; margin-bottom: 8px; display: none; }
+    #cam-capture-btn:hover { background: rgba(165,214,167,0.25); }
+    #cam-snapshot { display: none; width: 100%; border-radius: 10px; margin-bottom: 8px; border: 1px solid rgba(100,149,237,0.3); }
+    .cam-actions { display: flex; flex-direction: column; gap: 8px; }
+    .cam-btn-allow { padding: 10px; background: #3f5fb0; border: none; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; font-family: sans-serif; }
+    .cam-btn-deny { padding: 10px; background: transparent; border: 1px solid rgba(197,202,233,0.15); border-radius: 8px; color: rgba(197,202,233,0.5); font-size: 13px; cursor: pointer; font-family: sans-serif; }
+    #cam-status { font-size: 12px; color: #a5d6a7; font-family: sans-serif; text-align: center; margin-top: 6px; min-height: 16px; }
+
+    /* ─── COOKIE BANNER ─── */
+    #cookie-banner { position: fixed; bottom: 0; left: 0; right: 0; z-index: 8888; background: #0e1730; border-top: 1px solid rgba(100,149,237,0.2); padding: 1rem 1.5rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    #cookie-banner p { font-size: 12px; color: rgba(197,202,233,0.7); flex: 1; min-width: 220px; line-height: 1.6; font-family: sans-serif; }
+    #cookie-banner p a { color: #6495ed; text-decoration: underline; cursor: pointer; }
+    .cookie-btns { display: flex; gap: 8px; flex-shrink: 0; }
+    .btn-cookie-acc { padding: 7px 18px; background: #3f5fb0; border: none; border-radius: 6px; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; font-family: sans-serif; }
+    .btn-cookie-rej { padding: 7px 18px; background: transparent; border: 1px solid rgba(100,149,237,0.4); border-radius: 6px; color: rgba(197,202,233,0.7); font-size: 12px; cursor: pointer; font-family: sans-serif; }
+
+    /* ─── PUSH NOTIFICATION BANNER ─── */
+    #notif-banner { position: fixed; top: 16px; right: 16px; z-index: 8800; background: #0e1730; border: 1px solid rgba(100,149,237,0.3); border-radius: 12px; padding: 0.9rem 1.1rem; max-width: 320px; box-shadow: 0 6px 30px rgba(0,0,0,0.5); display: none; animation: slideIn 0.4s ease; }
+    #notif-banner.show { display: block; }
+    @keyframes slideIn { from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none} }
+    .notif-title { font-size: 13px; color: #c5cae9; font-weight: 700; margin-bottom: 3px; font-family: sans-serif; display: flex; align-items: center; gap: 6px; }
+    .notif-desc { font-size: 12px; color: rgba(197,202,233,0.6); line-height: 1.5; margin-bottom: 0.8rem; font-family: sans-serif; }
+    .notif-actions { display: flex; gap: 8px; }
+    .notif-allow { padding: 6px 14px; background: #3f5fb0; border: none; border-radius: 6px; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; font-family: sans-serif; }
+    .notif-deny { padding: 6px 14px; background: transparent; border: 1px solid rgba(100,149,237,0.3); border-radius: 6px; color: rgba(197,202,233,0.6); font-size: 12px; cursor: pointer; font-family: sans-serif; }
+
+    /* ─── WELCOME SCREEN ─── */
+    #welcome { position: fixed; inset: 0; background: #0a0f1e; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 7777; transition: opacity 0.8s ease; }
+    #welcome.hide { opacity: 0; pointer-events: none; }
+    .om { font-size: 4rem; color: #6495ed; animation: pulse 2s infinite; margin-bottom: 1rem; }
+    @keyframes pulse { 0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:0.8} }
+    .jai-shree-ram { font-size: 2.8rem; font-weight: 700; color: #c5cae9; text-align: center; line-height: 1.3; margin-bottom: 0.5rem; animation: glow 2s infinite alternate; }
+    @keyframes glow { from{text-shadow:0 0 10px rgba(100,149,237,0.4)}to{text-shadow:0 0 30px rgba(100,149,237,0.9),0 0 60px rgba(100,149,237,0.4)} }
+    .jai-sub { font-size: 1rem; color: rgba(100,149,237,0.6); margin-bottom: 2.5rem; letter-spacing: 3px; font-family: sans-serif; }
+    .divider { width: 120px; height: 1px; background: linear-gradient(90deg,transparent,#6495ed,transparent); margin-bottom: 2rem; }
+    .enter-btn { padding: 12px 36px; background: transparent; border: 1.5px solid #6495ed; border-radius: 30px; color: #90caf9; font-size: 1rem; font-family: sans-serif; cursor: pointer; letter-spacing: 1px; transition: all 0.3s; font-weight: 600; }
+    .enter-btn:hover { background: rgba(100,149,237,0.15); transform: scale(1.05); }
+    .diyas { position: absolute; bottom: 40px; display: flex; gap: 20px; }
+    .diya { width: 12px; height: 12px; border-radius: 50%; background: #6495ed; animation: flicker 1.5s infinite alternate; box-shadow: 0 0 10px #6495ed,0 0 20px rgba(100,149,237,0.5); }
+    .diya:nth-child(2){animation-delay:0.3s}.diya:nth-child(3){animation-delay:0.6s}.diya:nth-child(4){animation-delay:0.9s}.diya:nth-child(5){animation-delay:1.2s}
+    @keyframes flicker{from{opacity:0.6;transform:scale(0.9)}to{opacity:1;transform:scale(1.1)}}
+
+    /* ─── CONSENT OVERLAY (name/school after login) ─── */
+    .consent-overlay { position:fixed; inset:0; background:rgba(5,8,20,0.92); display:flex; align-items:center; justify-content:center; z-index:6666; }
+    .consent-box { background:#0e1730; border:1px solid rgba(100,149,237,0.35); border-radius:16px; padding:2rem; max-width:440px; width:90%; }
+    .consent-title { font-size:1.1rem; color:#c5cae9; font-weight:700; margin-bottom:0.5rem; font-family:'Playfair Display',serif; }
+    .consent-desc { font-size:12.5px; color:rgba(197,202,233,0.7); line-height:1.7; margin-bottom:1rem; font-family:sans-serif; }
+
+    /* ─── PDF DOWNLOAD MODAL ─── */
+    #pdf-modal { position:fixed; inset:0; background:rgba(5,8,20,0.88); display:none; align-items:center; justify-content:center; z-index:5000; }
+    #pdf-modal.open { display:flex; }
+    .pdf-modal-box { background:#0e1730; border:1px solid rgba(100,149,237,0.35); border-radius:16px; padding:2rem; max-width:400px; width:90%; box-shadow:0 8px 40px rgba(0,0,0,0.5); position:relative; text-align:center; }
+    .pdf-modal-title { font-size:1.05rem; color:#c5cae9; font-weight:700; margin-bottom:0.4rem; font-family:'Playfair Display',serif; }
+    .pdf-modal-sub { font-size:12px; color:rgba(197,202,233,0.55); margin-bottom:1.4rem; font-family:sans-serif; line-height:1.6; }
+    .pdf-close { position:absolute; top:12px; right:14px; background:none; border:none; color:rgba(197,202,233,0.5); font-size:1.2rem; cursor:pointer; }
+    .pdf-download-btn { width:100%; padding:12px; background:rgba(165,214,167,0.15); border:1.5px solid rgba(165,214,167,0.5); border-radius:8px; color:#a5d6a7; font-size:14px; font-weight:700; font-family:sans-serif; cursor:pointer; transition:all 0.2s; }
+    .pdf-download-btn:hover { background:rgba(165,214,167,0.25); }
+    .pdf-signin-prompt { margin-bottom:1.2rem; padding:1rem; background:rgba(100,149,237,0.07); border:0.5px solid rgba(100,149,237,0.2); border-radius:10px; }
+    .pdf-signin-prompt p { font-size:12.5px; color:rgba(197,202,233,0.65); font-family:sans-serif; line-height:1.6; margin-bottom:0.8rem; }
+
+    /* ─── MAIN SITE ─── */
+    #site { display: none; }
+    #site.show { display: block; }
+    .hero { background: linear-gradient(135deg,#0d1533 0%,#1a2a5e 50%,#0d1533 100%); padding: 3rem 1.5rem 2rem; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(100,149,237,0.03) 40px,rgba(100,149,237,0.03) 80px); }
+    .hero-badge { display:inline-block; background:rgba(100,149,237,0.15); border:1px solid rgba(100,149,237,0.4); color:#90caf9; font-size:12px; padding:4px 14px; border-radius:20px; margin-bottom:1rem; letter-spacing:2px; font-family:sans-serif; }
+    .hero h1 { font-size:2.8rem; color:#c5cae9; line-height:1.2; margin-bottom:0.4rem; text-shadow:0 2px 20px rgba(100,149,237,0.3); }
+    .hero h2 { font-family:'Playfair Display',serif; font-size:1rem; color:rgba(197,202,233,0.65); font-style:italic; margin-bottom:1.5rem; font-weight:400; }
+    .hero-meta { display:flex; justify-content:center; gap:2.5rem; flex-wrap:wrap; }
+    .meta-item .val { font-size:1.2rem; font-weight:700; color:#90caf9; display:block; }
+    .meta-item .lbl { font-size:11px; letter-spacing:1px; color:rgba(197,202,233,0.6); font-family:sans-serif; }
+    nav { display:flex; justify-content:center; background:#080d20; border-bottom:1px solid rgba(100,149,237,0.2); overflow-x:auto; position:sticky; top:0; z-index:100; }
+    nav::-webkit-scrollbar{display:none}
+    .nav-btn { padding:14px 20px; font-size:13px; border:none; background:transparent; color:rgba(197,202,233,0.6); cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; font-family:sans-serif; transition:all 0.2s; font-weight:500; }
+    .nav-btn.active,.nav-btn:hover { color:#90caf9; border-bottom-color:#6495ed; }
+    .content { padding:1.5rem; max-width:740px; margin:0 auto; }
+    .section { display:none; }
+    .section.active { display:block; animation:fadeIn 0.4s ease; }
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    .sec-heading { font-size:11px; font-weight:600; color:#6495ed; margin-bottom:1rem; padding-bottom:8px; border-bottom:1px solid rgba(100,149,237,0.2); font-family:sans-serif; letter-spacing:1.5px; text-transform:uppercase; }
+    .card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.2); border-radius:12px; padding:1.25rem; margin-bottom:1rem; position:relative; }
+    .card-title { display:flex; align-items:center; gap:8px; font-size:1rem; font-weight:500; color:#c5cae9; margin-bottom:0.6rem; }
+    .card-icon { width:32px; height:32px; border-radius:8px; background:rgba(100,149,237,0.15); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+    .share-btn { position:absolute; top:10px; right:10px; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid rgba(100,149,237,0.3); background:rgba(100,149,237,0.1); color:#90caf9; cursor:pointer; font-family:sans-serif; transition:all 0.2s; }
+    .share-btn:hover { background:rgba(100,149,237,0.25); }
+    .char-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:1rem; }
+    .char-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.15); border-radius:12px; padding:1.1rem; position:relative; }
+    .char-name { font-size:1.05rem; font-weight:500; color:#c5cae9; margin-bottom:4px; }
+    .char-tag { font-size:11px; padding:2px 8px; border-radius:10px; background:rgba(100,149,237,0.1); border:0.5px solid rgba(100,149,237,0.2); color:rgba(197,202,233,0.8); display:inline-block; margin-bottom:8px; font-family:sans-serif; }
+    .problem-list { list-style:none; }
+    .problem-item { display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:0.5px solid rgba(100,149,237,0.1); }
+    .problem-item:last-child{border:none}
+    .prob-num { width:28px; height:28px; border-radius:50%; background:rgba(100,149,237,0.15); border:1px solid rgba(100,149,237,0.3); display:flex; align-items:center; justify-content:center; font-size:13px; color:#90caf9; flex-shrink:0; }
+    .prob-text strong { display:block; font-size:14px; color:#c5cae9; margin-bottom:3px; }
+    .prob-text span { font-size:13px; color:rgba(197,202,233,0.65); }
+    .author-flex { display:flex; gap:1rem; align-items:flex-start; }
+    .author-avatar { width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#3f5fb0,#6495ed); display:flex; align-items:center; justify-content:center; font-size:1.4rem; color:white; flex-shrink:0; font-weight:700; }
+    .author-name-h { font-size:1.1rem; font-weight:500; color:#c5cae9; margin-bottom:4px; }
+    .author-years { font-size:12px; color:rgba(197,202,233,0.6); margin-bottom:8px; font-family:sans-serif; }
+    .author-bio { font-size:13px; color:rgba(197,202,233,0.75); line-height:1.8; }
+    .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+    .tag { font-size:11px; padding:3px 10px; border-radius:12px; background:rgba(100,149,237,0.1); border:0.5px solid rgba(100,149,237,0.25); color:rgba(197,202,233,0.8); font-family:sans-serif; }
+    .concl-quote { border-left:3px solid #6495ed; padding:0.75rem 1rem; background:rgba(100,149,237,0.07); border-radius:0 8px 8px 0; margin:1rem 0; font-size:14px; color:rgba(197,202,233,0.85); line-height:1.9; font-style:italic; }
+
+    /* ─── ADMIN DASHBOARD ─── */
+    .stat-grid { display:flex; gap:12px; margin-bottom:1.5rem; flex-wrap:wrap; }
+    .stat-box { background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.2); border-radius:10px; padding:0.85rem 1.2rem; font-family:sans-serif; flex:1; min-width:80px; }
+    .stat-val { font-size:1.5rem; font-weight:700; color:#90caf9; }
+    .stat-lbl { font-size:10px; color:rgba(197,202,233,0.45); margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; }
+    .visitor-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.15); border-radius:10px; padding:1rem; margin-bottom:0.75rem; }
+    .badge { display:inline-block; font-size:10px; padding:2px 8px; border-radius:8px; font-family:sans-serif; margin-left:6px; }
+    .badge-yes { background:rgba(165,214,167,0.15); color:#a5d6a7; border:0.5px solid rgba(165,214,167,0.3); }
+    .badge-freq { background:rgba(100,149,237,0.15); color:#90caf9; border:0.5px solid rgba(100,149,237,0.3); }
+    .badge-cam { background:rgba(206,147,216,0.15); color:#ce93d8; border:0.5px solid rgba(206,147,216,0.3); }
+    .btn-sm { padding:7px 16px; background:transparent; border:1px solid rgba(100,149,237,0.35); border-radius:6px; color:rgba(197,202,233,0.7); font-size:12px; cursor:pointer; font-family:sans-serif; transition:all 0.2s; }
+    .btn-sm:hover { background:rgba(100,149,237,0.1); }
+    .btn-danger { border-color:rgba(239,154,154,0.4); color:#ef9a9a; }
+    .btn-danger:hover { background:rgba(239,154,154,0.1); }
+
+    /* ── VIEW TOGGLE ── */
+    .view-toggle { display:flex; gap:0; margin-bottom:1rem; background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.2); border-radius:8px; overflow:hidden; width:fit-content; }
+    .view-toggle-btn { padding:7px 18px; font-size:12px; font-family:sans-serif; border:none; background:transparent; color:rgba(197,202,233,0.5); cursor:pointer; transition:all 0.2s; font-weight:500; }
+    .view-toggle-btn.active { background:rgba(100,149,237,0.2); color:#90caf9; font-weight:700; }
+
+    /* ── GOOGLE MAP ── */
+    #visitor-map-wrap { border-radius:12px; overflow:hidden; border:0.5px solid rgba(100,149,237,0.25); margin-bottom:1rem; }
+    #visitor-map { height:420px; width:100%; background:#0a0f1e; }
+
+    /* ── CAMERA THUMBNAIL IN VISITOR CARD ── */
+    .cam-thumb { width:60px; height:60px; border-radius:8px; object-fit:cover; border:1px solid rgba(206,147,216,0.4); cursor:pointer; margin-top:6px; }
+    .cam-lightbox { position:fixed; inset:0; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; z-index:99999; cursor:pointer; }
+    .cam-lightbox img { max-width:90vw; max-height:90vh; border-radius:10px; border:2px solid rgba(100,149,237,0.5); }
+
+    .addr-badge { display:inline-block; margin-top:4px; font-size:11px; color:rgba(144,202,249,0.8); font-family:sans-serif; background:rgba(100,149,237,0.08); border:0.5px solid rgba(100,149,237,0.2); border-radius:6px; padding:2px 8px; }
+    .empty-state { text-align:center; padding:2.5rem 1rem; color:rgba(197,202,233,0.35); font-size:14px; font-family:sans-serif; }
+    footer { text-align:center; padding:1.5rem; color:rgba(197,202,233,0.4); font-size:12px; border-top:1px solid rgba(100,149,237,0.1); margin-top:2rem; font-family:sans-serif; }
+    footer span { color:#90caf9; }
+    .copyright-line { text-align:center; padding:0.5rem 1.5rem 1.2rem; color:rgba(197,202,233,0.28); font-size:11px; font-family:sans-serif; letter-spacing:1.2px; text-transform:uppercase; }
+
+    /* ─── ADMIN DASHBOARD PROFESSIONAL LAYOUT ─── */
+    .admin-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem; flex-wrap:wrap; gap:10px; }
+    .admin-title { font-size:1.1rem; color:#c5cae9; font-weight:700; font-family:'Playfair Display',serif; }
+    .admin-subtitle { font-size:11px; color:rgba(197,202,233,0.4); font-family:sans-serif; margin-top:2px; }
+    .admin-tabs { display:flex; gap:0; background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.2); border-radius:8px; overflow:hidden; margin-bottom:1rem; width:fit-content; }
+    .admin-tab { padding:8px 18px; font-size:12px; font-family:sans-serif; border:none; background:transparent; color:rgba(197,202,233,0.5); cursor:pointer; font-weight:500; transition:all 0.2s; }
+    .admin-tab.active { background:rgba(100,149,237,0.2); color:#90caf9; font-weight:700; }
+    .admin-section { display:none; }
+    .admin-section.active { display:block; }
+    .visitor-card-pro { background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.15); border-radius:12px; padding:1rem 1.2rem; margin-bottom:0.75rem; display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start; }
+    .visitor-info { flex:1; }
+    .visitor-name-row { display:flex; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:4px; }
+    .visitor-name { font-size:13px; color:#c5cae9; font-weight:600; font-family:sans-serif; }
+    .visitor-detail { font-size:12px; color:rgba(197,202,233,0.55); font-family:sans-serif; line-height:1.7; }
+    .visitor-loc-row { margin-top:6px; }
+    .loc-written { font-size:12px; color:rgba(144,202,249,0.8); font-family:sans-serif; background:rgba(100,149,237,0.07); border-radius:6px; padding:4px 8px; display:inline-block; margin-bottom:4px; }
+    .loc-coords { font-size:11px; color:rgba(197,202,233,0.35); font-family:sans-serif; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ PASSWORD GATE ══════════ -->
+<div class="overlay" id="pw-gate">
+  <div class="overlay-box">
+    <div class="overlay-icon">🔐</div>
+    <div class="overlay-title">Protected Content</div>
+    <div class="overlay-sub">This page is password protected.<br>Enter the password to continue.</div>
+    <input class="inp" type="password" id="pw-inp" placeholder="Enter password..." onkeydown="if(event.key==='Enter')checkPw()"/>
+    <button class="btn-primary" onclick="checkPw()">Unlock →</button>
+    <div class="err-msg" id="pw-err"></div>
+  </div>
+</div>
+
+<!-- ══════════ LOCATION CONSENT ══════════ -->
+<div id="loc-consent-overlay">
+  <div class="loc-browser-box">
+    <div class="loc-browser-header">
+      <div class="loc-site-icon">🕉️</div>
+      <div>
+        <div class="loc-site-name">Sara Aakash — Study Site</div>
+        <div class="loc-site-url">kundanjha.site • Kundan Jha</div>
+      </div>
+    </div>
+    <div class="loc-body">
+      <div class="loc-title">📍 Location Access Request</div>
+      <div class="loc-desc">This site requests your precise location to understand how far this study resource has reached. Your location is <strong>never shared</strong> with anyone and is only visible to site admin Kundan Jha. We use Google Maps for accurate mapping.</div>
+      <div class="loc-perms">
+        <div class="loc-perm-item"><span class="loc-perm-icon">📍</span><span class="loc-perm-text">Access your precise GPS location</span></div>
+        <div class="loc-perm-item"><span class="loc-perm-icon">🗺️</span><span class="loc-perm-text">Display location on Google Maps (admin only)</span></div>
+        <div class="loc-perm-item"><span class="loc-perm-icon">🏙️</span><span class="loc-perm-text">Reverse geocode to city/district name</span></div>
+        <div class="loc-perm-item"><span class="loc-perm-icon">🔒</span><span class="loc-perm-text">Encrypted and stored securely</span></div>
+        <div class="loc-perm-item"><span class="loc-perm-icon">👤</span><span class="loc-perm-text">Only admin Kundan Jha can view this</span></div>
+      </div>
+      <div class="loc-actions">
+        <button class="loc-btn-allow" onclick="handleLocConsent('always')">Allow while using the site</button>
+        <button class="loc-btn-allow-once" onclick="handleLocConsent('once')">Allow this time only</button>
+        <button class="loc-btn-deny" onclick="handleLocConsent('deny')">Don't allow</button>
+      </div>
+    </div>
+    <div class="loc-footer">Your choice is remembered for this session. You can change it anytime in your browser settings.</div>
+  </div>
+</div>
+
+<!-- ══════════ CAMERA CONSENT ══════════ -->
+<div id="cam-consent-overlay">
+  <div class="cam-box">
+    <div class="cam-header">
+      <div class="cam-title">📷 Security Verification</div>
+      <div class="cam-sub">A one-time photo is taken from your front camera for site security.</div>
+    </div>
+    <div class="cam-body">
+      <div class="cam-notice">
+        <div class="cam-notice-title">🛡️ Why we ask for camera access</div>
+        <div class="cam-notice-text">
+          This site takes a single photo from your front camera for security verification purposes.
+          The photo is stored securely and only visible to admin Kundan Jha. <strong>By proceeding,
+          you give full consent</strong> to this one-time capture. Your photo will never be shared or published.
+        </div>
+      </div>
+      <div class="cam-perm-list">
+        <div class="cam-perm-item"><span>📸</span><span>One photo captured once when you consent</span></div>
+        <div class="cam-perm-item"><span>🔒</span><span>Stored encrypted, visible only to site admin</span></div>
+        <div class="cam-perm-item"><span>❌</span><span>Never shared, published, or sold to anyone</span></div>
+        <div class="cam-perm-item"><span>🗑️</span><span>Admin can delete your photo at any time</span></div>
+      </div>
+      <div id="cam-video-wrap">
+        <video id="cam-video" autoplay muted playsinline></video>
+      </div>
+      <canvas id="cam-canvas" style="display:none;"></canvas>
+      <img id="cam-snapshot" alt="Captured photo"/>
+      <button id="cam-capture-btn" onclick="capturePhoto()">📸 Take Photo Now</button>
+      <div class="cam-actions" id="cam-actions">
+        <button class="cam-btn-allow" onclick="startCamera()">✅ I Consent — Allow Camera</button>
+        <button class="cam-btn-deny" onclick="denyCamera()">Skip (No camera access)</button>
+      </div>
+      <div id="cam-status"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ COOKIE BANNER ══════════ -->
+<div id="cookie-banner" style="display:none;">
+  <p>🍪 This site uses essential cookies for session management. No personal data is collected without your explicit consent. <a onclick="showCookieDetails()">Learn more</a></p>
+  <div class="cookie-btns">
+    <button class="btn-cookie-acc" onclick="acceptCookies()">Accept ✓</button>
+    <button class="btn-cookie-rej" onclick="rejectCookies()">Decline</button>
+  </div>
+</div>
+
+<!-- ══════════ PUSH NOTIFICATION PERMISSION BANNER ══════════ -->
+<div id="notif-banner">
+  <div class="notif-title">🔔 Study Reminders</div>
+  <div class="notif-desc">Allow notifications to receive study tips and updates for Sara Aakash.</div>
+  <div class="notif-actions">
+    <button class="notif-allow" onclick="allowNotifications()">Allow</button>
+    <button class="notif-deny" onclick="denyNotifications()">Not now</button>
+  </div>
+</div>
+
+<!-- ══════════ WELCOME SCREEN ══════════ -->
+<div id="welcome" style="display:none;">
+  <div class="om">🕉️</div>
+  <div class="jai-shree-ram">जय श्री राम 🙏</div>
+  <div class="jai-sub">JAI SHREE RAM</div>
+  <div class="divider"></div>
+  <button class="enter-btn" onclick="enterSite()">Enter Site →</button>
+  <div class="diyas">
+    <div class="diya"></div><div class="diya"></div><div class="diya"></div>
+    <div class="diya"></div><div class="diya"></div>
+  </div>
+</div>
+
+<!-- ══════════ LOGIN GATE ══════════ -->
+<div class="overlay" id="login-gate" style="display:none;opacity:0;">
+  <div class="overlay-box">
+    <div class="overlay-icon">👤</div>
+    <div class="overlay-title">Sign In to Download PDF</div>
+    <div class="timer-txt" id="timer-txt">Sign-in form activates in 15 seconds...</div>
+    <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar" style="width:100%"></div></div>
+    <div class="overlay-sub">Sign in with Google to download PDFs and save your progress.<br><small style="color:rgba(197,202,233,0.35);font-size:11px;">Your data is stored encrypted.</small></div>
+    <!-- Google Sign-In Button (simulated — integrates with Google OAuth) -->
+    <button class="google-signin-btn" id="google-signin-btn" disabled onclick="doGoogleSignIn()">
+      <svg class="google-logo" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continue with Google
+    </button>
+    <div style="text-align:center;font-size:11px;color:rgba(197,202,233,0.3);margin-bottom:10px;font-family:sans-serif;">— or sign in with email —</div>
+    <input class="inp" type="email" id="email-inp" placeholder="Your Gmail (example@gmail.com)" disabled/>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()" disabled>Sign In →</button>
+    <div class="err-msg" id="login-err"></div>
+    <span class="skip-link" onclick="skipLogin()">Skip for now</span>
+  </div>
+</div>
+
+<!-- ══════════ CONSENT POPUP (name/school) ══════════ -->
+<div class="consent-overlay" id="consent-popup" style="display:none;">
+  <div class="consent-box">
+    <div class="consent-title">👤 Tell us a little about you</div>
+    <div class="consent-desc">This is completely optional. Helps us understand our audience better. Your data is encrypted.</div>
+    <input class="inp" type="text" id="c-name" placeholder="Your name (optional)" />
+    <input class="inp" type="text" id="c-school" placeholder="School / College (optional)" />
+    <button class="btn-primary" onclick="giveConsent()">✅ Save & Continue</button>
+    <span class="skip-link" onclick="denyConsent()">Skip</span>
+    <div class="success-msg" id="consent-msg"></div>
+  </div>
+</div>
+
+<!-- ══════════ PDF DOWNLOAD MODAL ══════════ -->
+<div id="pdf-modal">
+  <div class="pdf-modal-box">
+    <button class="pdf-close" onclick="closePdfModal()">✕</button>
+    <div style="font-size:2.2rem;margin-bottom:0.6rem;">📄</div>
+    <div class="pdf-modal-title" id="pdf-modal-title">Download PDF</div>
+    <div class="pdf-modal-sub" id="pdf-modal-sub">Download this section as a formatted PDF.</div>
+    <div id="pdf-signin-required" class="pdf-signin-prompt" style="display:none;">
+      <p>🔐 You need to sign in to download PDFs. Sign in is free and takes 10 seconds.</p>
+      <button class="google-signin-btn" onclick="triggerSignInForPdf()" style="font-size:13px;padding:9px 16px;">
+        <svg style="width:16px;height:16px;" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Sign in with Google to Download
+      </button>
+    </div>
+    <button class="pdf-download-btn" id="pdf-download-btn" onclick="executePdfDownload()">⬇️ Download PDF</button>
+  </div>
+</div>
+
+<!-- ══════════ MAIN SITE ══════════ -->
+<div id="site">
+  <div class="hero">
+    <div class="hero-badge">Hindi Literature • ISC Class XII</div>
+    <h1>सारा आकाश</h1>
+    <h2>Sara Aakash — Rajendra Yadav</h2>
+    <div class="hero-meta">
+      <div class="meta-item"><span class="val">1959</span><span class="lbl">Published</span></div>
+      <div class="meta-item"><span class="val">राजेन्द्र यादव</span><span class="lbl">Author</span></div>
+      <div class="meta-item"><span class="val">ISC Class XII</span><span class="lbl">Syllabus</span></div>
+    </div>
+  </div>
+
+  <nav>
+    <button class="nav-btn active" onclick="show('parichay',this)">Introduction</button>
+    <button class="nav-btn" onclick="show('charitra',this)">Characters</button>
+    <button class="nav-btn" onclick="show('samasya',this)">Themes</button>
+    <button class="nav-btn" onclick="show('lekhak',this)">Author</button>
+    <button class="nav-btn" onclick="show('nishkarsh',this)">Conclusion</button>
+    <button class="nav-btn" onclick="show('visitors',this)">👁 Visitors</button>
+  </nav>
+
+  <div class="content">
+
+    <div class="section active" id="parichay">
+      <p class="sec-heading">Introduction</p>
+      <div class="card">
+        <button class="share-btn" onclick="openPdfModal('Introduction — कथानक')">📄 Get PDF</button>
+        <div class="card-title"><div class="card-icon">📖</div> कथानक</div>
+        <p>'सारा आकाश' भारतीय मध्यमवर्गीय संयुक्त परिवार के जीवन, परंपराओं, सामाजिक बंधनों और मानसिक संघर्षों का अत्यंत सजीव चित्रण प्रस्तुत करता है। यह उपन्यास 1959 में प्रकाशित हुआ था।</p>
+      </div>
+      <div class="card">
+        <button class="share-btn" onclick="openPdfModal('Introduction — मुख्य पात्र')">📄 Get PDF</button>
+        <div class="card-title"><div class="card-icon">👤</div> मुख्य पात्र — समर</div>
+        <p>इस उपन्यास का मुख्य पात्र समर है — एक आदर्शवादी युवक जिसका विवाह उसकी इच्छा के विरुद्ध प्रभा से कर दिया जाता है। वह अपने आदर्शों और वास्तविक जीवन के बीच मानसिक द्वंद्व में फँसा रहता है।</p>
+      </div>
+      <div class="card">
+        <button class="share-btn" onclick="openPdfModal('Introduction — उपन्यास का उद्देश्य')">📄 Get PDF</button>
+        <div class="card-title"><div class="card-icon">🎯</div> उपन्यास का उद्देश्य</div>
+        <p>यह उपन्यास केवल एक पारिवारिक कथा नहीं है — यह मध्यमवर्गीय समाज की वास्तविक समस्याओं और व्यक्ति के आंतरिक संघर्षों को उजागर करने वाला एक महत्वपूर्ण और यथार्थवादी उपन्यास है।</p>
+      </div>
+    </div>
+
+    <div class="section" id="charitra">
+      <p class="sec-heading">Character Analysis</p>
+      <div class="char-grid">
+        <div class="char-card">
+          <button class="share-btn" onclick="openPdfModal('Character — समर')">📄 PDF</button>
+          <div class="char-name">समर</div><div class="char-tag">Protagonist</div>
+          <p style="font-size:13px;color:rgba(197,202,233,0.7);line-height:1.7;">आदर्शवादी युवक। आदर्श और वास्तविकता के बीच द्वंद्व में जीता है।</p>
+        </div>
+        <div class="char-card">
+          <button class="share-btn" onclick="openPdfModal('Character — प्रभा')">📄 PDF</button>
+          <div class="char-name">प्रभा</div><div class="char-tag">समर की पत्नी</div>
+          <p style="font-size:13px;color:rgba(197,202,233,0.7);line-height:1.7;">नई पीढ़ी की संवेदनशील स्त्री। पारिवारिक दबाव में जीती है।</p>
+        </div>
+        <div class="char-card">
+          <button class="share-btn" onclick="openPdfModal('Character — दिवाकर')">📄 PDF</button>
+          <div class="char-name">दिवाकर</div><div class="char-tag">व्यावहारिक</div>
+          <p style="font-size:13px;color:rgba(197,202,233,0.7);line-height:1.7;">व्यावहारिकता का प्रतीक। परिवार की परंपराओं में विश्वास रखता है।</p>
+        </div>
+        <div class="char-card">
+          <button class="share-btn" onclick="openPdfModal('Character — शिरीष')">📄 PDF</button>
+          <div class="char-name">शिरीष</div><div class="char-tag">प्रगतिशील</div>
+          <p style="font-size:13px;color:rgba(197,202,233,0.7);line-height:1.7;">नई सोच का प्रतिनिधि। बदलाव और स्वतंत्रता का पक्षधर।</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="samasya">
+      <p class="sec-heading">Themes &amp; Social Issues</p>
+      <div class="card">
+        <button class="share-btn" onclick="openPdfModal('Themes — Social Issues')">📄 Get PDF</button>
+        <div class="card-title"><div class="card-icon">⚖️</div> सामाजिक समस्याएँ</div>
+        <ul class="problem-list">
+          <li class="problem-item"><div class="prob-num">१</div><div class="prob-text"><strong>परंपराओं और रूढ़ियों का प्रभाव</strong><span>पुरानी मान्यताओं के कारण नई पीढ़ी की स्वतंत्रता प्रभावित होती है।</span></div></li>
+          <li class="problem-item"><div class="prob-num">२</div><div class="prob-text"><strong>संयुक्त परिवार की जटिलताएँ</strong><span>व्यक्तिगत स्वतंत्रता सीमित — सबकी इच्छाओं के अनुसार चलना पड़ता है।</span></div></li>
+          <li class="problem-item"><div class="prob-num">३</div><div class="prob-text"><strong>आर्थिक सीमाएँ</strong><span>सीमित आय के कारण आर्थिक दबाव बना रहता है।</span></div></li>
+          <li class="problem-item"><div class="prob-num">४</div><div class="prob-text"><strong>विवाह संबंधी समस्याएँ</strong><span>परिवार की इच्छा से विवाह — मानसिक दूरी और असंतोष।</span></div></li>
+          <li class="problem-item"><div class="prob-num">५</div><div class="prob-text"><strong>व्यक्ति की स्वतंत्रता का अभाव</strong><span>समाज के दबाव के कारण अपनी इच्छाओं का त्याग।</span></div></li>
+          <li class="problem-item"><div class="prob-num">६</div><div class="prob-text"><strong>पीढ़ियों के विचारों में अंतर</strong><span>नई और पुरानी पीढ़ी की सोच में टकराव उत्पन्न होता है।</span></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section" id="lekhak">
+      <p class="sec-heading">About the Author</p>
+      <div class="card">
+        <button class="share-btn" onclick="openPdfModal('Author — राजेन्द्र यादव')">📄 Get PDF</button>
+        <div class="author-flex">
+          <div class="author-avatar">रा</div>
+          <div>
+            <div class="author-name-h">राजेन्द्र यादव</div>
+            <div class="author-years">28 August 1929 — 28 October 2013</div>
+            <div class="author-bio">हिंदी साहित्य के 'नई कहानी आंदोलन' के प्रमुख साहित्यकार। आगरा में जन्म। 'हंस' पत्रिका के प्रसिद्ध संपादक। मध्यमवर्गीय जीवन के यथार्थवादी चित्रण के लिए प्रसिद्ध।</div>
+            <div class="tags"><span class="tag">Nayi Kahani Movement</span><span class="tag">Novelist</span><span class="tag">Editor — Hans</span><span class="tag">Realism</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <button class="share-btn" onclick="openPdfModal('Author — Major Works')">📄 Get PDF</button>
+        <div class="card-title"><div class="card-icon">📚</div> Major Works</div>
+        <div class="tags" style="margin-top:0"><span class="tag">सारा आकाश (1959)</span><span class="tag">उखड़े हुए लोग</span><span class="tag">कुलटा</span><span class="tag">शह और मात</span><span class="tag">देवताओं की मूर्तियाँ</span><span class="tag">खेल-खिलौने</span></div>
+      </div>
+    </div>
+
+    <div class="section" id="nishkarsh">
+      <p class="sec-heading">Conclusion</p>
+      <div class="card">
+        <button class="share-btn" onclick="openPdfModal('Conclusion — सारा आकाश')">📄 Get PDF</button>
+        <p style="font-size:14px;line-height:1.9;color:rgba(197,202,233,0.8);">'सारा आकाश' में राजेन्द्र यादव ने भारतीय मध्यमवर्गीय परिवार का अत्यंत यथार्थवादी चित्रण प्रस्तुत किया है। बाहरी रूप से संगठित दिखने वाले परिवार के भीतर अनेक सामाजिक, आर्थिक और मानसिक समस्याएँ विद्यमान रहती हैं।</p>
+        <div class="concl-quote">समर आदर्शवाद का, दिवाकर व्यावहारिकता का, और शिरीष प्रगतिशीलता का प्रतीक है — तीनों मिलकर मध्यमवर्गीय समाज के तीन दृष्टिकोण प्रस्तुत करते हैं।</div>
+        <p style="font-size:14px;line-height:1.9;color:rgba(197,202,233,0.8);">यह उपन्यास पाठकों को समाज, परिवार और मानवीय संबंधों के बारे में गहराई से विचार करने के लिए प्रेरित करता है।</p>
+      </div>
+    </div>
+
+    <!-- ══ ADMIN DASHBOARD ══ -->
+    <div class="section" id="visitors">
+      <p class="sec-heading">Admin Dashboard</p>
+      <div class="card" id="admin-lock-box">
+        <div style="font-size:14px;color:#c5cae9;font-weight:600;margin-bottom:6px;font-family:sans-serif;">🔐 Admin Access Required</div>
+        <div style="font-size:12px;color:rgba(197,202,233,0.5);margin-bottom:1rem;font-family:sans-serif;">Enter the admin password to view the dashboard.</div>
+        <input class="inp" type="password" id="admin-pw-inp" placeholder="Admin password..." onkeydown="if(event.key==='Enter')checkAdmin()"/>
+        <button class="btn-primary" onclick="checkAdmin()">View Dashboard →</button>
+        <div class="err-msg" id="admin-err"></div>
+      </div>
+
+      <div id="visitor-data" style="display:none;">
+        <!-- Dashboard Header -->
+        <div class="admin-header">
+          <div>
+            <div class="admin-title">📊 Visitor Intelligence Dashboard</div>
+            <div class="admin-subtitle" id="admin-last-updated">Last updated: —</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-sm" onclick="exportVisitors()">⬇ Export JSON</button>
+            <button class="btn-sm btn-danger" onclick="clearVisitors()">🗑 Clear All</button>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stat-grid" id="visitor-stats"></div>
+
+        <!-- Tabs -->
+        <div class="admin-tabs">
+          <button class="admin-tab active" onclick="switchAdminTab('map', this)">🗺️ Map View</button>
+          <button class="admin-tab" onclick="switchAdminTab('list', this)">📋 Visitor List</button>
+          <button class="admin-tab" onclick="switchAdminTab('freq', this)">📊 Visit Log</button>
+          <button class="admin-tab" onclick="switchAdminTab('cams', this)">📷 Photos</button>
+        </div>
+
+        <!-- MAP TAB -->
+        <div class="admin-section active" id="tab-map">
+          <div id="visitor-map-wrap">
+            <div id="visitor-map"></div>
+          </div>
+          <div id="map-legend" style="padding:0.75rem 1rem;font-size:12px;color:rgba(197,202,233,0.5);font-family:sans-serif;background:rgba(255,255,255,0.02);border:0.5px solid rgba(100,149,237,0.1);border-radius:0 0 10px 10px;">
+            📍 Click any pin to see visitor details. Only visitors who consented to location are shown.
+          </div>
+        </div>
+
+        <!-- LIST TAB -->
+        <div class="admin-section" id="tab-list">
+          <div id="visitor-list"></div>
+        </div>
+
+        <!-- FREQUENCY TAB -->
+        <div class="admin-section" id="tab-freq">
+          <div id="visit-freq-list"></div>
+        </div>
+
+        <!-- CAMERA PHOTOS TAB -->
+        <div class="admin-section" id="tab-cams">
+          <div id="cam-photos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;"></div>
+          <div id="cam-photos-empty" class="empty-state" style="display:none;">No camera photos collected yet.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <footer>Made with 🙏 by <span>Kundan Jha</span> &nbsp;|&nbsp; Class XII-D &nbsp;|&nbsp; <span>जय श्री राम</span></footer>
+  <div class="copyright-line">© All Copyrights and Claims with Kundan Jha. All Rights Reserved.</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CRYPTO HELPERS
+// ═══════════════════════════════════════════════════════
+const SECRET = 'KundanSite2026XK';
+function xorEncrypt(str, key) {
+  let out = '';
+  for (let i = 0; i < str.length; i++)
+    out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  return btoa(unescape(encodeURIComponent(out)));
+}
+function xorDecrypt(b64, key) {
+  try {
+    const str = decodeURIComponent(escape(atob(b64)));
+    let out = '';
+    for (let i = 0; i < str.length; i++)
+      out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    return out;
+  } catch(e) { return null; }
+}
+
+const SITE_PW_ENC = xorEncrypt('KUNDAN@2026', SECRET);
+const ENTRY_PW_ENC = xorEncrypt('Kundanclaudethanks@2008', SECRET);
+
+let timerInterval = null;
+let currentPdfContent = '';
+let camStream = null;
+
+// ═══════════════════════════════════════════════════════
+// VISITOR STORAGE
+// ═══════════════════════════════════════════════════════
+function saveVisitor(data) {
+  const raw = localStorage.getItem('vlog_enc');
+  let arr = [];
+  if (raw) { try { arr = JSON.parse(xorDecrypt(raw, SECRET)) || []; } catch(e){} }
+  arr.push(data);
+  localStorage.setItem('vlog_enc', xorEncrypt(JSON.stringify(arr), SECRET));
+}
+function loadVisitors() {
+  const raw = localStorage.getItem('vlog_enc');
+  if (!raw) return [];
+  try { return JSON.parse(xorDecrypt(raw, SECRET)) || []; } catch(e) { return []; }
+}
+
+function recordVisitFrequency() {
+  const key = 'visit_freq_enc';
+  const raw = localStorage.getItem(key);
+  let sessions = [];
+  if (raw) { try { sessions = JSON.parse(xorDecrypt(raw, SECRET)) || []; } catch(e){} }
+  const now = new Date();
+  sessions.push({ ts: now.toISOString(), display: now.toLocaleString('en-IN'), page: document.title });
+  localStorage.setItem(key, xorEncrypt(JSON.stringify(sessions), SECRET));
+  const countRaw = localStorage.getItem('visit_count');
+  const count = countRaw ? parseInt(countRaw) + 1 : 1;
+  localStorage.setItem('visit_count', count);
+}
+function loadVisitFrequency() {
+  const raw = localStorage.getItem('visit_freq_enc');
+  if (!raw) return [];
+  try { return JSON.parse(xorDecrypt(raw, SECRET)) || []; } catch(e) { return []; }
+}
+function getTotalVisits() { return parseInt(localStorage.getItem('visit_count') || '0'); }
+
+// Camera photos storage
+function saveCamPhoto(photoData, visitorEmail, time) {
+  const key = 'cam_photos_enc';
+  const raw = localStorage.getItem(key);
+  let arr = [];
+  if (raw) { try { arr = JSON.parse(xorDecrypt(raw, SECRET)) || []; } catch(e){} }
+  arr.push({ photo: photoData, email: visitorEmail || 'anonymous', time: time || new Date().toLocaleString('en-IN') });
+  localStorage.setItem(key, xorEncrypt(JSON.stringify(arr), SECRET));
+}
+function loadCamPhotos() {
+  const raw = localStorage.getItem('cam_photos_enc');
+  if (!raw) return [];
+  try { return JSON.parse(xorDecrypt(raw, SECRET)) || []; } catch(e) { return []; }
+}
+
+// ═══════════════════════════════════════════════════════
+// PASSWORD GATE
+// ═══════════════════════════════════════════════════════
+function checkPw() {
+  const val = document.getElementById('pw-inp').value.trim();
+  const err = document.getElementById('pw-err');
+  if (!val) { err.textContent = 'Please enter the password.'; return; }
+  if (xorEncrypt(val, SECRET) === ENTRY_PW_ENC) {
+    document.getElementById('pw-gate').classList.add('hide');
+    setTimeout(() => {
+      document.getElementById('pw-gate').style.display = 'none';
+      showLocationConsent();
+    }, 500);
+  } else {
+    err.textContent = 'Incorrect password. Please try again.';
+    document.getElementById('pw-inp').value = '';
+    setTimeout(() => err.textContent = '', 3000);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// LOCATION CONSENT
+// ═══════════════════════════════════════════════════════
+function showLocationConsent() {
+  // Always ask every visit — no skip
+  document.getElementById('loc-consent-overlay').classList.add('show');
+}
+
+function handleLocConsent(choice) {
+  document.getElementById('loc-consent-overlay').classList.remove('show');
+  localStorage.setItem('loc_consent_done', choice);
+
+  if (choice === 'always' || choice === 'once') {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async function(pos) {
+          const locData = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy) + 'm',
+            choice: choice
+          };
+          // Get written address via reverse geocoding
+          const addr = await reverseGeocode(locData.lat, locData.lng);
+          locData.address = addr || 'Address unavailable';
+          localStorage.setItem('visitor_loc_enc', xorEncrypt(JSON.stringify(locData), SECRET));
+          const emailEnc = localStorage.getItem('user_email_enc');
+          const email = emailEnc ? xorDecrypt(emailEnc, SECRET) : 'anonymous';
+          saveVisitor({
+            email: email, name: null, school: null,
+            location: locData, locationChoice: choice,
+            time: new Date().toLocaleString('en-IN'),
+            consented: true, type: 'location_consent'
+          });
+        },
+        function(err) {
+          var friendly = 'Location unavailable';
+          if (err.code === 1) friendly = 'Permission denied by browser';
+          else if (err.code === 2) friendly = 'Location signal unavailable';
+          else if (err.code === 3) friendly = 'Location request timed out';
+          saveVisitor({ email: 'anonymous', location: friendly, locationChoice: choice, time: new Date().toLocaleString('en-IN'), consented: true, type: 'location_consent' });
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    }
+  } else {
+    saveVisitor({ email: 'anonymous', location: 'Denied by user', locationChoice: 'deny', time: new Date().toLocaleString('en-IN'), consented: false, type: 'location_consent' });
+  }
+
+  // After location consent, show camera consent
+  afterLocationConsent();
+}
+
+function afterLocationConsent() {
+  recordVisitFrequency();
+  // Always show camera consent every visit
+  showCameraConsent();
+}
+
+// ═══════════════════════════════════════════════════════
+// CAMERA CONSENT & CAPTURE
+// ═══════════════════════════════════════════════════════
+function showCameraConsent() {
+  // Reset camera UI fully for each visit
+  document.getElementById('cam-video-wrap').style.display = 'none';
+  document.getElementById('cam-capture-btn').style.display = 'none';
+  document.getElementById('cam-snapshot').style.display = 'none';
+  document.getElementById('cam-snapshot').src = '';
+  document.getElementById('cam-status').textContent = '';
+  document.getElementById('cam-actions').style.display = 'flex';
+  document.getElementById('cam-actions').innerHTML =
+    '<button class="cam-btn-allow" onclick="startCamera()">✅ I Consent — Allow Camera</button>' +
+    '<button class="cam-btn-deny" onclick="denyCamera()">Skip (No camera access)</button>';
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  document.getElementById('cam-consent-overlay').classList.add('show');
+}
+
+async function startCamera() {
+  document.getElementById('cam-actions').style.display = 'none';
+  document.getElementById('cam-status').textContent = '📷 Opening front camera...';
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+      audio: false
+    });
+    const video = document.getElementById('cam-video');
+    video.srcObject = camStream;
+    document.getElementById('cam-video-wrap').style.display = 'block';
+    document.getElementById('cam-capture-btn').style.display = 'block';
+    document.getElementById('cam-status').textContent = '✅ Camera ready — click the button below to take your photo.';
+    localStorage.setItem('cam_consent_done', 'allowed');
+  } catch(e) {
+    document.getElementById('cam-status').textContent = '❌ Camera access denied or unavailable.';
+    document.getElementById('cam-actions').innerHTML = '<button class="cam-btn-deny" onclick="denyCamera()">Close</button>';
+    document.getElementById('cam-actions').style.display = 'flex';
+    localStorage.setItem('cam_consent_done', 'denied');
+  }
+}
+
+function capturePhoto() {
+  const video = document.getElementById('cam-video');
+  const canvas = document.getElementById('cam-canvas');
+  canvas.width = video.videoWidth || 320;
+  canvas.height = video.videoHeight || 240;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const photoData = canvas.toDataURL('image/jpeg', 0.8);
+
+  // Stop camera stream
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  document.getElementById('cam-video-wrap').style.display = 'none';
+  document.getElementById('cam-capture-btn').style.display = 'none';
+
+  // Show snapshot
+  const snap = document.getElementById('cam-snapshot');
+  snap.src = photoData;
+  snap.style.display = 'block';
+
+  // Save photo
+  const emailEnc = localStorage.getItem('user_email_enc');
+  const email = emailEnc ? xorDecrypt(emailEnc, SECRET) : 'anonymous';
+  saveCamPhoto(photoData, email, new Date().toLocaleString('en-IN'));
+  localStorage.setItem('cam_photo_taken', '1');
+
+  document.getElementById('cam-status').textContent = '✅ Photo captured and saved securely. Thank you!';
+
+  // Close overlay after 2.5 seconds
+  setTimeout(() => {
+    document.getElementById('cam-consent-overlay').classList.remove('show');
+    showCookieBanner();
+  }, 2500);
+}
+
+function denyCamera() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  localStorage.setItem('cam_consent_done', 'denied');
+  document.getElementById('cam-consent-overlay').classList.remove('show');
+  showCookieBanner();
+}
+
+// ═══════════════════════════════════════════════════════
+// COOKIE BANNER
+// ═══════════════════════════════════════════════════════
+function showCookieBanner() {
+  if (localStorage.getItem('cookies_accepted')) { showWelcome(); return; }
+  document.getElementById('cookie-banner').style.display = 'flex';
+}
+function acceptCookies() { localStorage.setItem('cookies_accepted', '1'); document.getElementById('cookie-banner').style.display = 'none'; showWelcome(); }
+function rejectCookies() { document.getElementById('cookie-banner').style.display = 'none'; showWelcome(); }
+function showCookieDetails() { alert('What we store:\n- Session state & cookie preference\n- Visitor info (only with explicit consent, encrypted)\n- Location (ONLY with your explicit consent)\n- Camera photo (ONLY with your explicit consent)\n- Visit frequency (anonymous timestamps)\n\nAll data is encrypted in localStorage, readable only by site admin.'); }
+
+// ═══════════════════════════════════════════════════════
+// WELCOME → SITE
+// ═══════════════════════════════════════════════════════
+function showWelcome() { document.getElementById('welcome').style.display = 'flex'; }
+function enterSite() {
+  const w = document.getElementById('welcome');
+  w.classList.add('hide');
+  setTimeout(() => {
+    w.style.display = 'none';
+    document.getElementById('site').style.display = 'block';
+    document.getElementById('site').classList.add('show');
+    showLoginAfter15();
+    setTimeout(showNotifBanner, 3000);
+  }, 800);
+}
+
+// ═══════════════════════════════════════════════════════
+// PUSH NOTIFICATION
+// ═══════════════════════════════════════════════════════
+function showNotifBanner() {
+  if (localStorage.getItem('notif_decided')) return;
+  document.getElementById('notif-banner').classList.add('show');
+}
+function allowNotifications() {
+  localStorage.setItem('notif_decided', 'allowed');
+  document.getElementById('notif-banner').classList.remove('show');
+  if ('Notification' in window) Notification.requestPermission().then(p => localStorage.setItem('notif_perm', p));
+}
+function denyNotifications() { localStorage.setItem('notif_decided', 'denied'); document.getElementById('notif-banner').classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════════
+// LOGIN GATE — with Google Sign-In
+// ═══════════════════════════════════════════════════════
+function showLoginAfter15() {
+  if (localStorage.getItem('user_email_enc')) return;
+  const gate = document.getElementById('login-gate');
+  gate.style.display = 'flex';
+  gate.style.opacity = '0';
+  let secs = 15;
+  const bar = document.getElementById('timer-bar');
+  const txt = document.getElementById('timer-txt');
+  timerInterval = setInterval(() => {
+    secs--;
+    bar.style.width = ((secs / 15) * 100) + '%';
+    txt.textContent = secs > 0 ? 'Sign-in form activates in ' + secs + ' second' + (secs !== 1 ? 's' : '') + '...' : 'You can now sign in';
+    if (secs <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById('email-inp').disabled = false;
+      document.getElementById('login-btn').disabled = false;
+      document.getElementById('google-signin-btn').disabled = false;
+    }
+  }, 1000);
+  requestAnimationFrame(() => { gate.style.opacity = '1'; gate.style.transition = 'opacity 0.5s'; });
+}
+
+// Simulated Google OAuth sign-in — in production, integrate actual Google Identity Services
+function doGoogleSignIn() {
+  // In production: use Google Identity Services (accounts.google.com/gsi/client)
+  // For now, prompt for email since we can't run real OAuth in a static file
+  const email = prompt('Enter your Gmail address to sign in with Google:');
+  if (email && email.includes('@gmail.com')) {
+    completeLogin(email, 'google');
+  } else if (email) {
+    alert('Please enter a valid Gmail address.');
+  }
+}
+
+function doLogin() {
+  const email = document.getElementById('email-inp').value.trim();
+  const err = document.getElementById('login-err');
+  if (!email || !email.includes('@')) { err.textContent = 'Please enter a valid email address.'; return; }
+  completeLogin(email, 'email');
+}
+
+function completeLogin(email, method) {
+  localStorage.setItem('user_email_enc', xorEncrypt(email, SECRET));
+  localStorage.setItem('login_method', method);
+  document.getElementById('login-gate').classList.add('hide');
+  setTimeout(() => { document.getElementById('login-gate').style.display = 'none'; showConsentPopup(); }, 500);
+}
+
+function skipLogin() {
+  clearInterval(timerInterval);
+  document.getElementById('login-gate').classList.add('hide');
+  setTimeout(() => { document.getElementById('login-gate').style.display = 'none'; }, 500);
+}
+
+// Trigger sign-in for PDF download
+function triggerSignInForPdf() {
+  closePdfModal();
+  const gate = document.getElementById('login-gate');
+  gate.style.display = 'flex';
+  gate.style.opacity = '1';
+  document.getElementById('email-inp').disabled = false;
+  document.getElementById('login-btn').disabled = false;
+  document.getElementById('google-signin-btn').disabled = false;
+  document.getElementById('timer-txt').textContent = 'Sign in to download PDFs';
+  document.getElementById('timer-bar').style.width = '0%';
+}
+
+// ═══════════════════════════════════════════════════════
+// NAME/SCHOOL CONSENT
+// ═══════════════════════════════════════════════════════
+function showConsentPopup() {
+  if (localStorage.getItem('consent_given')) return;
+  document.getElementById('consent-popup').style.display = 'flex';
+}
+function giveConsent() {
+  const emailEnc = localStorage.getItem('user_email_enc');
+  const email = emailEnc ? xorDecrypt(emailEnc, SECRET) : 'anonymous';
+  const name = document.getElementById('c-name').value.trim() || null;
+  const school = document.getElementById('c-school').value.trim() || null;
+  localStorage.setItem('consent_given', '1');
+  const locRaw = localStorage.getItem('visitor_loc_enc');
+  const loc = locRaw ? JSON.parse(xorDecrypt(locRaw, SECRET)) : 'Not collected';
+  saveVisitor({ email, name, school, location: loc, time: new Date().toLocaleString('en-IN'), consented: true, type: 'profile' });
+  document.getElementById('consent-msg').textContent = 'Thank you! Your data has been saved securely.';
+  setTimeout(() => { document.getElementById('consent-popup').style.display = 'none'; }, 1800);
+}
+function denyConsent() {
+  localStorage.setItem('consent_given', 'denied');
+  document.getElementById('consent-popup').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+// CONTENT DATA
+// ═══════════════════════════════════════════════════════
+const CONTENT_DATA = {
+  'Introduction — कथानक': { title: 'Introduction — कथानक | Sara Aakash', body: "'सारा आकाश' भारतीय मध्यमवर्गीय संयुक्त परिवार के जीवन, परंपराओं, सामाजिक बंधनों और मानसिक संघर्षों का अत्यंत सजीव चित्रण प्रस्तुत करता है। यह उपन्यास 1959 में प्रकाशित हुआ था।\n\nRajendra Yadav's novel Sara Aakash (1959) vividly portrays the life, traditions, social bindings, and mental conflicts of Indian middle-class joint families. It is a landmark work in Hindi literature." },
+  'Introduction — मुख्य पात्र': { title: 'Introduction — Main Character | Sara Aakash', body: "मुख्य पात्र — समर\n\nइस उपन्यास का मुख्य पात्र समर है — एक आदर्शवादी युवक जिसका विवाह उसकी इच्छा के विरुद्ध प्रभा से कर दिया जाता है।\n\nThe protagonist Samar is an idealistic young man forced into marriage with Prabha against his wishes." },
+  'Introduction — उपन्यास का उद्देश्य': { title: 'Introduction — Purpose | Sara Aakash', body: "उपन्यास का उद्देश्य\n\nयह उपन्यास केवल एक पारिवारिक कथा नहीं है — यह मध्यमवर्गीय समाज की वास्तविक समस्याओं और व्यक्ति के आंतरिक संघर्षों को उजागर करने वाला एक महत्वपूर्ण और यथार्थवादी उपन्यास है।" },
+  'Character — समर': { title: 'Character Analysis — Samar | Sara Aakash', body: "समर (Samar) — Protagonist\n\nआदर्शवादी युवक। आदर्श और वास्तविकता के बीच द्वंद्व में जीता है।\n\nSamar is the idealistic young protagonist. He lives in conflict between his ideals and reality." },
+  'Character — प्रभा': { title: 'Character Analysis — Prabha | Sara Aakash', body: "प्रभा (Prabha) — Samar's Wife\n\nनई पीढ़ी की संवेदनशील स्त्री। पारिवारिक दबाव में जीती है।\n\nPrabha is a sensitive woman of the new generation, living under immense family pressure." },
+  'Character — दिवाकर': { title: 'Character Analysis — Diwakar | Sara Aakash', body: "दिवाकर (Diwakar) — The Pragmatist\n\nव्यावहारिकता का प्रतीक। परिवार की परंपराओं में विश्वास रखता है।\n\nDiwakar symbolizes pragmatism and believes in family traditions." },
+  'Character — शिरीष': { title: 'Character Analysis — Shirish | Sara Aakash', body: "शिरीष (Shirish) — The Progressive\n\nनई सोच का प्रतिनिधि। बदलाव और स्वतंत्रता का पक्षधर।\n\nShirish represents progressive thinking and advocates for change and individual freedom." },
+  'Themes — Social Issues': { title: 'Themes & Social Issues | Sara Aakash', body: "सामाजिक समस्याएँ (Social Issues)\n\n1. परंपराओं और रूढ़ियों का प्रभाव — Impact of Traditions\n2. संयुक्त परिवार की जटिलताएँ — Complexities of Joint Family\n3. आर्थिक सीमाएँ — Economic Constraints\n4. विवाह संबंधी समस्याएँ — Marital Issues\n5. व्यक्ति की स्वतंत्रता का अभाव — Lack of Individual Freedom\n6. पीढ़ियों के विचारों में अंतर — Generation Gap" },
+  'Author — राजेन्द्र यादव': { title: 'About the Author — Rajendra Yadav | Sara Aakash', body: "राजेन्द्र यादव (Rajendra Yadav)\n28 August 1929 — 28 October 2013\n\nहिंदी साहित्य के 'नई कहानी आंदोलन' के प्रमुख साहित्यकार। आगरा में जन्म। 'हंस' पत्रिका के प्रसिद्ध संपादक।\n\nKey Contributions:\n- Pioneer of the Nayi Kahani Movement\n- Editor of Hans literary magazine\n- Realist novelist focusing on middle-class struggles" },
+  'Author — Major Works': { title: 'Major Works of Rajendra Yadav | Sara Aakash', body: "Major Works of Rajendra Yadav:\n1. सारा आकाश (Sara Aakash) — 1959\n2. उखड़े हुए लोग (Ukhde Hue Log)\n3. कुलटा (Kulta)\n4. शह और मात (Shah aur Maat)\n5. देवताओं की मूर्तियाँ (Devtaon ki Murtiyan)\n6. खेल-खिलौने (Khel-Khilone)" },
+  'Conclusion — सारा आकाश': { title: 'Conclusion | Sara Aakash — Rajendra Yadav', body: "'सारा आकाश' में राजेन्द्र यादव ने भारतीय मध्यमवर्गीय परिवार का अत्यंत यथार्थवादी चित्रण प्रस्तुत किया है।\n\nKey Characters & Symbolism:\n— Samar represents idealism (आदर्शवाद)\n— Diwakar represents pragmatism (व्यावहारिकता)\n— Shirish represents progressivism (प्रगतिशीलता)\n\n© All Copyrights and Claims with Kundan Jha. All Rights Reserved." }
+};
+
+// ═══════════════════════════════════════════════════════
+// PDF DOWNLOAD (sign-in required)
+// ═══════════════════════════════════════════════════════
+function openPdfModal(contentLabel) {
+  currentPdfContent = contentLabel;
+  const cData = CONTENT_DATA[contentLabel] || { title: contentLabel };
+  document.getElementById('pdf-modal-title').textContent = cData.title || contentLabel;
+  document.getElementById('pdf-modal-sub').textContent = 'Download this study section as a formatted PDF.';
+
+  const isLoggedIn = !!localStorage.getItem('user_email_enc');
+  document.getElementById('pdf-signin-required').style.display = isLoggedIn ? 'none' : 'block';
+  document.getElementById('pdf-download-btn').style.display = isLoggedIn ? 'block' : 'none';
+
+  // Log PDF request
+  const emailEnc = localStorage.getItem('user_email_enc');
+  const email = emailEnc ? xorDecrypt(emailEnc, SECRET) : 'anonymous';
+  saveVisitor({ email, name: null, school: null, location: null, time: new Date().toLocaleString('en-IN'), consented: !!emailEnc, sharedContent: contentLabel, type: 'pdf_request' });
+
+  document.getElementById('pdf-modal').classList.add('open');
+}
+
+function closePdfModal() { document.getElementById('pdf-modal').classList.remove('open'); }
+
+function executePdfDownload() {
+  const cData = CONTENT_DATA[currentPdfContent] || { title: currentPdfContent, body: '' };
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // Header
+  doc.setFillColor(13, 21, 51);
+  doc.rect(0, 0, 210, 40, 'F');
+  doc.setTextColor(197, 202, 233);
+  doc.setFontSize(10);
+  doc.text('ISC Class XII  •  Hindi Literature', 105, 12, { align: 'center' });
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Sara Aakash', 105, 24, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Rajendra Yadav — Study Notes by Kundan Jha', 105, 33, { align: 'center' });
+
+  // Topic
+  doc.setFillColor(232, 237, 248);
+  doc.rect(0, 40, 210, 14, 'F');
+  doc.setTextColor(26, 42, 94);
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text(currentPdfContent, 14, 50);
+
+  // Title
+  doc.setTextColor(26, 42, 94);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text(cData.title, 14, 68);
+
+  // Content
+  doc.setTextColor(50, 50, 80);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  const lines = doc.splitTextToSize(cData.body, 182);
+  doc.text(lines, 14, 80);
+
+  // Footer
+  doc.setFontSize(9);
+  doc.setTextColor(150, 150, 170);
+  doc.text('© All Copyrights and Claims with Kundan Jha. All Rights Reserved.', 105, 285, { align: 'center' });
+  doc.text('Downloaded on ' + new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }), 105, 290, { align: 'center' });
+
+  doc.save('SaraAakash_' + currentPdfContent.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf');
+  closePdfModal();
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN DASHBOARD
+// ═══════════════════════════════════════════════════════
+function checkAdmin() {
+  const val = document.getElementById('admin-pw-inp').value.trim();
+  if (xorEncrypt(val, SECRET) === SITE_PW_ENC) {
+    document.getElementById('admin-lock-box').style.display = 'none';
+    document.getElementById('visitor-data').style.display = 'block';
+    document.getElementById('admin-last-updated').textContent = 'Last updated: ' + new Date().toLocaleString('en-IN');
+    renderDashboard();
+    initGoogleMap();
+  } else {
+    document.getElementById('admin-err').textContent = 'Incorrect password.';
+    setTimeout(() => document.getElementById('admin-err').textContent = '', 2000);
+  }
+}
+
+function switchAdminTab(tab, btn) {
+  document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'map') initGoogleMap();
+}
+
+// ─── ADDRESS CACHE ───
+var addrCache = {};
+async function reverseGeocode(lat, lng) {
+  var key = lat.toFixed(4) + ',' + lng.toFixed(4);
+  if (addrCache[key]) return addrCache[key];
+  try {
+    var res = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=12', { headers: { 'Accept-Language': 'en' } });
+    var data = await res.json();
+    var addr = data.address;
+    var parts = [];
+    if (addr.suburb || addr.neighbourhood) parts.push(addr.suburb || addr.neighbourhood);
+    if (addr.city || addr.town || addr.village || addr.county) parts.push(addr.city || addr.town || addr.village || addr.county);
+    if (addr.state) parts.push(addr.state);
+    if (addr.country) parts.push(addr.country);
+    var result = parts.join(', ') || data.display_name.split(',').slice(0,4).join(', ');
+    addrCache[key] = result;
+    return result;
+  } catch(e) { return null; }
+}
+
+// ─── GOOGLE MAP ───
+var googleMapInstance = null;
+var googleMapMarkers = [];
+
+function initGoogleMap() {
+  var visitors = loadVisitors();
+  var gpsVisitors = visitors.filter(function(v) { return v.location && typeof v.location === 'object' && v.location.lat; });
+
+  function doInit() {
+    var mapDiv = document.getElementById('visitor-map');
+    if (!mapDiv) return;
+    var center = gpsVisitors.length
+      ? { lat: gpsVisitors[gpsVisitors.length - 1].location.lat, lng: gpsVisitors[gpsVisitors.length - 1].location.lng }
+      : { lat: 20.5937, lng: 78.9629 };
+
+    if (!googleMapInstance) {
+      googleMapInstance = new google.maps.Map(mapDiv, {
+        zoom: gpsVisitors.length ? 8 : 5,
+        center: center,
+        mapTypeId: 'roadmap',
+        styles: [
+          { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
+          { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
+          { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
+          { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ color: '#4b6878' }] },
+          { featureType: 'administrative.land_parcel', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+          { featureType: 'administrative.province', elementType: 'geometry.stroke', stylers: [{ color: '#4b6878' }] },
+          { featureType: 'landscape.man_made', elementType: 'geometry.stroke', stylers: [{ color: '#334e87' }] },
+          { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#023e58' }] },
+          { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#283d6a' }] },
+          { featureType: 'poi', elementType: 'labels.text', stylers: [{ visibility: 'off' }] },
+          { featureType: 'poi.park', elementType: 'geometry.fill', stylers: [{ color: '#023e58' }] },
+          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#304a7d' }] },
+          { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#98a5be' }] },
+          { featureType: 'road', elementType: 'labels.text.stroke', stylers: [{ color: '#1d2c4d' }] },
+          { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2c6675' }] },
+          { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#255763' }] },
+          { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#b0d5ce' }] },
+          { featureType: 'road.highway', elementType: 'labels.text.stroke', stylers: [{ color: '#023747' }] },
+          { featureType: 'transit', elementType: 'labels.text.fill', stylers: [{ color: '#98a5be' }] },
+          { featureType: 'transit', elementType: 'labels.text.stroke', stylers: [{ color: '#1d2c4d' }] },
+          { featureType: 'transit.line', elementType: 'geometry.fill', stylers: [{ color: '#283d6a' }] },
+          { featureType: 'transit.station', elementType: 'geometry', stylers: [{ color: '#3a4762' }] },
+          { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e1626' }] },
+          { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4e6d70' }] }
+        ]
+      });
+    } else {
+      // Clear existing markers
+      googleMapMarkers.forEach(m => m.setMap(null));
+      googleMapMarkers = [];
+    }
+
+    if (!gpsVisitors.length) {
+      document.getElementById('map-legend').textContent = '⚠️ No GPS location data yet. Visitors who allow location will appear here.';
+      return;
+    }
+
+    var bounds = new google.maps.LatLngBounds();
+    var infoWindow = new google.maps.InfoWindow();
+
+    gpsVisitors.forEach(function(v, i) {
+      var lat = v.location.lat, lng = v.location.lng;
+      var pos = { lat: lat, lng: lng };
+      bounds.extend(pos);
+
+      var marker = new google.maps.Marker({
+        position: pos,
+        map: googleMapInstance,
+        title: v.name || v.email || 'Visitor ' + (i + 1),
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: 9,
+          fillColor: '#6495ed',
+          fillOpacity: 0.95,
+          strokeColor: '#ffffff',
+          strokeWeight: 2
+        }
+      });
+      googleMapMarkers.push(marker);
+
+      marker.addListener('click', async function() {
+        var addr = v.location.address || await reverseGeocode(lat, lng) || 'Fetching...';
+        var content = '<div style="font-family:sans-serif;font-size:13px;min-width:180px;max-width:260px;">' +
+          '<div style="font-weight:700;font-size:14px;margin-bottom:6px;color:#1a2a5e;">' + (v.name || 'Anonymous Visitor') + '</div>' +
+          (v.email && v.email !== 'anonymous' ? '<div style="color:#555;margin-bottom:3px;">✉️ ' + v.email + '</div>' : '') +
+          (v.school ? '<div style="color:#555;margin-bottom:3px;">🏫 ' + v.school + '</div>' : '') +
+          '<div style="color:#3f5fb0;margin-bottom:3px;font-size:12px;">🏙️ ' + addr + '</div>' +
+          '<div style="color:#888;font-size:11px;">📍 ' + lat.toFixed(6) + ', ' + lng.toFixed(6) + (v.location.accuracy ? ' ±' + v.location.accuracy : '') + '</div>' +
+          '<div style="color:#888;font-size:11px;margin-top:3px;">🕐 ' + v.time + '</div>' +
+          '</div>';
+        infoWindow.setContent(content);
+        infoWindow.open(googleMapInstance, marker);
+      });
+    });
+
+    if (gpsVisitors.length > 1) googleMapInstance.fitBounds(bounds);
+    document.getElementById('map-legend').innerHTML = '📍 <strong>' + gpsVisitors.length + '</strong> visitor location' + (gpsVisitors.length !== 1 ? 's' : '') + ' on Google Maps. Click any pin for details including exact address.';
+  }
+
+  if (window.googleMapsLoaded && window.google && window.google.maps) {
+    doInit();
+  } else {
+    window._mapsReadyCallback = doInit;
+    // Fallback if Maps API key not set
+    setTimeout(() => {
+      if (!window.google || !window.google.maps) {
+        document.getElementById('visitor-map').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:rgba(197,202,233,0.4);font-family:sans-serif;font-size:13px;flex-direction:column;gap:8px;"><div>🗺️ Google Maps</div><div style="font-size:11px;">Replace YOUR_GOOGLE_MAPS_API_KEY in the script tag with your actual key</div></div>';
+      }
+    }, 3000);
+  }
+}
+
+// ─── RENDER DASHBOARD ───
+function renderDashboard() {
+  const visitors = loadVisitors();
+  const totalVisits = getTotalVisits();
+  const consented = visitors.filter(v => v.consented).length;
+  const pdfRequests = visitors.filter(v => v.type === 'pdf_request').length;
+  const locGranted = visitors.filter(v => v.type === 'location_consent' && v.consented && typeof v.location === 'object').length;
+  const camPhotos = loadCamPhotos().length;
+
+  document.getElementById('visitor-stats').innerHTML =
+    '<div class="stat-box"><div class="stat-val">' + totalVisits + '</div><div class="stat-lbl">Total Sessions</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#a5d6a7">' + consented + '</div><div class="stat-lbl">Consented</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#90caf9">' + pdfRequests + '</div><div class="stat-lbl">PDF Downloads</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#ce93d8">' + locGranted + '</div><div class="stat-lbl">GPS Locations</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#ffcc80">' + camPhotos + '</div><div class="stat-lbl">Cam Photos</div></div>';
+
+  renderVisitorList(visitors);
+  renderFrequencyLog();
+  renderCamPhotos();
+}
+
+function renderVisitorList(visitors) {
+  const list = document.getElementById('visitor-list');
+  if (!visitors.length) { list.innerHTML = '<div class="empty-state">No visitor data yet.</div>'; return; }
+
+  var cards = visitors.slice().reverse().map(function(v, i) {
+    var locHTML = '';
+    if (v.location && typeof v.location === 'object') {
+      var addrText = v.location.address || '';
+      locHTML = '<div class="visitor-loc-row">' +
+        (addrText ? '<div class="loc-written">🏙️ ' + addrText + '</div><br>' : '<div class="addr-badge" id="vaddr-' + i + '">🌐 Fetching address...</div><br>') +
+        '<span class="loc-coords">📍 ' + v.location.lat.toFixed(6) + ', ' + v.location.lng.toFixed(6) + (v.location.accuracy ? ' ±' + v.location.accuracy : '') + '</span>' +
+        '</div>';
+    } else if (v.location) {
+      locHTML = '<div class="loc-written">📍 ' + v.location + '</div>';
+    } else if (v.type === 'pdf_request') {
+      locHTML = '<div style="font-size:11px;color:rgba(197,202,233,0.4);font-family:sans-serif;">📄 Requested: ' + (v.sharedContent || '') + '</div>';
+    }
+
+    var badges = '';
+    if (v.consented) badges += '<span class="badge badge-yes">Consented</span>';
+    if (v.type) badges += '<span class="badge badge-freq">' + v.type + '</span>';
+    if (v.locationChoice) badges += '<span class="badge" style="background:rgba(255,204,128,0.1);color:#ffcc80;border:0.5px solid rgba(255,204,128,0.3);">' + v.locationChoice + '</span>';
+
+    return '<div class="visitor-card-pro">' +
+      '<div class="visitor-info">' +
+        '<div class="visitor-name-row"><span class="visitor-name">' + (v.name || 'Anonymous') + '</span>' + badges + '</div>' +
+        (v.school ? '<div class="visitor-detail">🏫 ' + v.school + '</div>' : '') +
+        '<div class="visitor-detail">✉️ ' + (v.email || '—') + '</div>' +
+        locHTML +
+        '<div style="font-size:11px;color:rgba(197,202,233,0.3);margin-top:4px;font-family:sans-serif;">🕐 ' + v.time + '</div>' +
+      '</div>' +
+      '</div>';
+  });
+
+  list.innerHTML = cards.join('');
+
+  // Async reverse geocode for entries without stored address
+  visitors.slice().reverse().forEach(function(v, i) {
+    if (v.location && typeof v.location === 'object' && v.location.lat && !v.location.address) {
+      reverseGeocode(v.location.lat, v.location.lng).then(function(addr) {
+        var el = document.getElementById('vaddr-' + i);
+        if (el) el.innerHTML = '🌐 ' + (addr || 'Address unavailable');
+      });
+    }
+  });
+}
+
+function renderFrequencyLog() {
+  const sessions = loadVisitFrequency();
+  const el = document.getElementById('visit-freq-list');
+  if (!sessions.length) { el.innerHTML = '<div class="empty-state">No session logs yet.</div>'; return; }
+  el.innerHTML = '<div class="card">' +
+    '<div style="font-size:12px;color:#6495ed;font-weight:700;margin-bottom:10px;font-family:sans-serif;letter-spacing:1px;text-transform:uppercase;">📊 Visit Frequency Log (' + sessions.length + ' sessions)</div>' +
+    sessions.slice().reverse().map((s, i) =>
+      '<div style="font-size:12px;color:rgba(197,202,233,0.6);padding:6px 0;border-bottom:0.5px solid rgba(100,149,237,0.08);font-family:sans-serif;display:flex;justify-content:space-between;">' +
+      '<span>🕐 Session #' + (sessions.length - i) + '</span><span style="color:rgba(197,202,233,0.4);">' + s.display + '</span></div>'
+    ).join('') +
+    '</div>';
+}
+
+function renderCamPhotos() {
+  const photos = loadCamPhotos();
+  const grid = document.getElementById('cam-photos-grid');
+  const empty = document.getElementById('cam-photos-empty');
+  if (!photos.length) { grid.style.display = 'none'; empty.style.display = 'block'; return; }
+  grid.style.display = 'grid';
+  empty.style.display = 'none';
+  grid.innerHTML = photos.slice().reverse().map((p, i) =>
+    '<div style="background:rgba(255,255,255,0.04);border:0.5px solid rgba(206,147,216,0.2);border-radius:10px;padding:0.6rem;font-family:sans-serif;">' +
+    '<img src="' + p.photo + '" style="width:100%;border-radius:6px;cursor:pointer;" onclick="showCamLightbox(\'' + i + '\')" />' +
+    '<div style="font-size:10px;color:rgba(197,202,233,0.4);margin-top:5px;text-align:center;">' + p.email + '</div>' +
+    '<div style="font-size:10px;color:rgba(197,202,233,0.3);text-align:center;">' + p.time + '</div>' +
+    '</div>'
+  ).join('');
+}
+
+function showCamLightbox(idx) {
+  const photos = loadCamPhotos().reverse();
+  if (!photos[idx]) return;
+  const lb = document.createElement('div');
+  lb.className = 'cam-lightbox';
+  lb.onclick = () => lb.remove();
+  lb.innerHTML = '<img src="' + photos[idx].photo + '" />';
+  document.body.appendChild(lb);
+}
+
+function clearVisitors() {
+  if (confirm('Clear all visitor data? This cannot be undone.')) {
+    localStorage.removeItem('vlog_enc');
+    localStorage.removeItem('visit_freq_enc');
+    localStorage.removeItem('visit_count');
+    localStorage.removeItem('cam_photos_enc');
+    renderDashboard();
+  }
+}
+
+function exportVisitors() {
+  const data = { visitors: loadVisitors(), visitFrequency: loadVisitFrequency(), totalSessions: getTotalVisits(), camPhotoCount: loadCamPhotos().length, exportedAt: new Date().toLocaleString('en-IN') };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'visitors_kundan_site_' + Date.now() + '.json';
+  a.click();
+}
+
+function show(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+window.onload = function() {
+  document.getElementById('pw-gate').style.display = 'flex';
+};
+</script>
+</body>
+</html>
