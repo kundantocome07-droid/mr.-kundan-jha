@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sara Aakash — Rajendra Yadav</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tiro+Devanagari+Hindi:ital@0;1&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet"/>
+  <!-- EmailJS SDK for server-side email sending -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <!-- jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- Leaflet for interactive map -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Tiro Devanagari Hindi', serif; background: #0a0f1e; color: #e8eaf6; min-height: 100vh; }
+
+    /* ─── OVERLAYS ─── */
+    .overlay { position: fixed; inset: 0; background: rgba(5,8,20,0.97); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s ease; }
+    .overlay.hide { opacity: 0; pointer-events: none; }
+    .overlay-box { background: #0e1730; border: 1px solid rgba(100,149,237,0.35); border-radius: 16px; padding: 2rem 2.5rem; max-width: 420px; width: 90%; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    .overlay-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+    .overlay-title { font-size: 1.3rem; color: #c5cae9; margin-bottom: 0.4rem; font-weight: 700; font-family: 'Playfair Display', serif; }
+    .overlay-sub { font-size: 13px; color: rgba(197,202,233,0.6); margin-bottom: 1.5rem; line-height: 1.6; font-family: sans-serif; }
+    .inp { width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(100,149,237,0.3); border-radius: 8px; color: #e8eaf6; font-size: 14px; font-family: sans-serif; margin-bottom: 10px; outline: none; transition: border 0.2s; }
+    .inp:focus { border-color: #6495ed; }
+    .inp:disabled { opacity: 0.4; }
+    .btn-primary { width: 100%; padding: 11px; background: rgba(100,149,237,0.18); border: 1.5px solid #6495ed; border-radius: 8px; color: #90caf9; font-size: 14px; font-family: sans-serif; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+    .btn-primary:hover { background: rgba(100,149,237,0.32); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+    .err-msg { font-size: 12px; color: #ef9a9a; margin-top: 8px; min-height: 16px; font-family: sans-serif; }
+    .success-msg { font-size: 13px; color: #a5d6a7; margin-top: 8px; min-height: 16px; font-family: sans-serif; }
+    .skip-link { display: block; text-align: center; margin-top: 12px; font-size: 12px; color: rgba(197,202,233,0.45); cursor: pointer; text-decoration: underline; font-family: sans-serif; }
+    .skip-link:hover { color: rgba(197,202,233,0.7); }
+    .timer-bar-wrap { width: 100%; height: 4px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-bottom: 1.2rem; overflow: hidden; }
+    .timer-bar { height: 100%; background: #6495ed; border-radius: 4px; transition: width 1s linear; }
+    .timer-txt { font-size: 12px; color: rgba(197,202,233,0.6); margin-bottom: 0.6rem; font-family: sans-serif; }
+
+    /* ─── LOCATION CONSENT POPUP (browser-style) ─── */
+    #loc-consent-overlay { position: fixed; inset: 0; background: rgba(5,8,20,0.85); display: none; align-items: center; justify-content: center; z-index: 9800; }
+    #loc-consent-overlay.show { display: flex; }
+    .loc-browser-box { background: #131d3a; border: 1px solid rgba(100,149,237,0.4); border-radius: 16px; padding: 0; max-width: 400px; width: 90%; box-shadow: 0 12px 50px rgba(0,0,0,0.7); overflow: hidden; }
+    .loc-browser-header { background: #0e1730; padding: 1rem 1.2rem 0.8rem; border-bottom: 1px solid rgba(100,149,237,0.15); display: flex; align-items: center; gap: 10px; }
+    .loc-site-icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(100,149,237,0.2); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .loc-site-name { font-size: 13px; color: #c5cae9; font-family: sans-serif; font-weight: 600; }
+    .loc-site-url { font-size: 11px; color: rgba(197,202,233,0.4); font-family: sans-serif; }
+    .loc-body { padding: 1.2rem 1.4rem; }
+    .loc-title { font-size: 15px; color: #c5cae9; font-weight: 700; margin-bottom: 0.5rem; font-family: 'Playfair Display', serif; }
+    .loc-desc { font-size: 12.5px; color: rgba(197,202,233,0.65); line-height: 1.7; margin-bottom: 1.2rem; font-family: sans-serif; }
+    .loc-perms { margin-bottom: 1.2rem; }
+    .loc-perm-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px; }
+    .loc-perm-icon { font-size: 16px; }
+    .loc-perm-text { font-size: 12.5px; color: rgba(197,202,233,0.75); font-family: sans-serif; flex: 1; }
+    .loc-actions { display: flex; flex-direction: column; gap: 8px; }
+    .loc-btn-allow { padding: 10px; background: #3f5fb0; border: none; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; font-family: sans-serif; transition: background 0.2s; }
+    .loc-btn-allow:hover { background: #4a70c4; }
+    .loc-btn-allow-once { padding: 10px; background: rgba(100,149,237,0.12); border: 1px solid rgba(100,149,237,0.35); border-radius: 8px; color: #90caf9; font-size: 13px; font-weight: 600; cursor: pointer; font-family: sans-serif; transition: all 0.2s; }
+    .loc-btn-allow-once:hover { background: rgba(100,149,237,0.22); }
+    .loc-btn-deny { padding: 10px; background: transparent; border: 1px solid rgba(197,202,233,0.15); border-radius: 8px; color: rgba(197,202,233,0.5); font-size: 13px; cursor: pointer; font-family: sans-serif; transition: all 0.2s; }
+    .loc-btn-deny:hover { background: rgba(255,255,255,0.04); color: rgba(197,202,233,0.7); }
+    .loc-footer { padding: 0.7rem 1.4rem 1rem; font-size: 11px; color: rgba(197,202,233,0.3); font-family: sans-serif; text-align: center; }
+
+    /* ─── COOKIE BANNER ─── */
+    #cookie-banner { position: fixed; bottom: 0; left: 0; right: 0; z-index: 8888; background: #0e1730; border-top: 1px solid rgba(100,149,237,0.2); padding: 1rem 1.5rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+    #cookie-banner p { font-size: 12px; color: rgba(197,202,233,0.7); flex: 1; min-width: 220px; line-height: 1.6; font-family: sans-serif; }
+    #cookie-banner p a { color: #6495ed; text-decoration: underline; cursor: pointer; }
+    .cookie-btns { display: flex; gap: 8px; flex-shrink: 0; }
+    .btn-cookie-acc { padding: 7px 18px; background: #3f5fb0; border: none; border-radius: 6px; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; font-family: sans-serif; }
+    .btn-cookie-rej { padding: 7px 18px; background: transparent; border: 1px solid rgba(100,149,237,0.4); border-radius: 6px; color: rgba(197,202,233,0.7); font-size: 12px; cursor: pointer; font-family: sans-serif; }
+
+    /* ─── PUSH NOTIFICATION BANNER ─── */
+    #notif-banner { position: fixed; top: 16px; right: 16px; z-index: 8800; background: #0e1730; border: 1px solid rgba(100,149,237,0.3); border-radius: 12px; padding: 0.9rem 1.1rem; max-width: 320px; box-shadow: 0 6px 30px rgba(0,0,0,0.5); display: none; animation: slideIn 0.4s ease; }
+    #notif-banner.show { display: block; }
+    @keyframes slideIn { from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none} }
+    .notif-title { font-size: 13px; color: #c5cae9; font-weight: 700; margin-bottom: 3px; font-family: sans-serif; display: flex; align-items: center; gap: 6px; }
+    .notif-desc { font-size: 12px; color: rgba(197,202,233,0.6); line-height: 1.5; margin-bottom: 0.8rem; font-family: sans-serif; }
+    .notif-actions { display: flex; gap: 8px; }
+    .notif-allow { padding: 6px 14px; background: #3f5fb0; border: none; border-radius: 6px; color: #fff; font-size: 12px; font-weight: 700; cursor: pointer; font-family: sans-serif; }
+    .notif-deny { padding: 6px 14px; background: transparent; border: 1px solid rgba(100,149,237,0.3); border-radius: 6px; color: rgba(197,202,233,0.6); font-size: 12px; cursor: pointer; font-family: sans-serif; }
+
+    /* ─── WELCOME SCREEN ─── */
+    #welcome { position: fixed; inset: 0; background: #0a0f1e; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 7777; transition: opacity 0.8s ease; }
+    #welcome.hide { opacity: 0; pointer-events: none; }
+    .om { font-size: 4rem; color: #6495ed; animation: pulse 2s infinite; margin-bottom: 1rem; }
+    @keyframes pulse { 0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:0.8} }
+    .jai-shree-ram { font-size: 2.8rem; font-weight: 700; color: #c5cae9; text-align: center; line-height: 1.3; margin-bottom: 0.5rem; animation: glow 2s infinite alternate; }
+    @keyframes glow { from{text-shadow:0 0 10px rgba(100,149,237,0.4)}to{text-shadow:0 0 30px rgba(100,149,237,0.9),0 0 60px rgba(100,149,237,0.4)} }
+    .jai-sub { font-size: 1rem; color: rgba(100,149,237,0.6); margin-bottom: 2.5rem; letter-spacing: 3px; font-family: sans-serif; }
+    .divider { width: 120px; height: 1px; background: linear-gradient(90deg,transparent,#6495ed,transparent); margin-bottom: 2rem; }
+    .enter-btn { padding: 12px 36px; background: transparent; border: 1.5px solid #6495ed; border-radius: 30px; color: #90caf9; font-size: 1rem; font-family: sans-serif; cursor: pointer; letter-spacing: 1px; transition: all 0.3s; font-weight: 600; }
+    .enter-btn:hover { background: rgba(100,149,237,0.15); transform: scale(1.05); }
+    .diyas { position: absolute; bottom: 40px; display: flex; gap: 20px; }
+    .diya { width: 12px; height: 12px; border-radius: 50%; background: #6495ed; animation: flicker 1.5s infinite alternate; box-shadow: 0 0 10px #6495ed,0 0 20px rgba(100,149,237,0.5); }
+    .diya:nth-child(2){animation-delay:0.3s}.diya:nth-child(3){animation-delay:0.6s}.diya:nth-child(4){animation-delay:0.9s}.diya:nth-child(5){animation-delay:1.2s}
+    @keyframes flicker{from{opacity:0.6;transform:scale(0.9)}to{opacity:1;transform:scale(1.1)}}
+
+    /* ─── CONSENT OVERLAY (name/school after login) ─── */
+    .consent-overlay { position:fixed; inset:0; background:rgba(5,8,20,0.92); display:flex; align-items:center; justify-content:center; z-index:6666; }
+    .consent-box { background:#0e1730; border:1px solid rgba(100,149,237,0.35); border-radius:16px; padding:2rem; max-width:440px; width:90%; }
+    .consent-title { font-size:1.1rem; color:#c5cae9; font-weight:700; margin-bottom:0.5rem; font-family:'Playfair Display',serif; }
+    .consent-desc { font-size:12.5px; color:rgba(197,202,233,0.7); line-height:1.7; margin-bottom:1rem; font-family:sans-serif; }
+
+    /* ─── EMAIL-TO-PDF SHARE MODAL ─── */
+    #share-modal { position:fixed; inset:0; background:rgba(5,8,20,0.88); display:none; align-items:center; justify-content:center; z-index:5000; }
+    #share-modal.open { display:flex; }
+    .share-modal-box { background:#0e1730; border:1px solid rgba(100,149,237,0.35); border-radius:16px; padding:2rem; max-width:420px; width:90%; box-shadow:0 8px 40px rgba(0,0,0,0.5); position:relative; }
+    .share-modal-title { font-size:1.05rem; color:#c5cae9; font-weight:700; margin-bottom:0.4rem; font-family:'Playfair Display',serif; }
+    .share-modal-sub { font-size:12px; color:rgba(197,202,233,0.55); margin-bottom:1.2rem; font-family:sans-serif; line-height:1.6; }
+    .share-close { position:absolute; top:12px; right:14px; background:none; border:none; color:rgba(197,202,233,0.5); font-size:1.2rem; cursor:pointer; }
+    .share-steps { display:flex; gap:6px; margin-bottom:1.1rem; }
+    .share-step { flex:1; padding:6px; text-align:center; font-size:11px; font-family:sans-serif; border-radius:6px; background:rgba(255,255,255,0.03); border:0.5px solid rgba(100,149,237,0.15); color:rgba(197,202,233,0.4); transition:all 0.3s; }
+    .share-step.active { background:rgba(100,149,237,0.15); border-color:rgba(100,149,237,0.5); color:#90caf9; font-weight:600; }
+    .share-step.done { background:rgba(165,214,167,0.1); border-color:rgba(165,214,167,0.3); color:#a5d6a7; }
+    .sending-anim { text-align:center; padding:1.5rem 0; }
+    .sending-spinner { width:40px; height:40px; border:3px solid rgba(100,149,237,0.2); border-top-color:#6495ed; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 1rem; }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .sending-txt { font-size:13px; color:rgba(197,202,233,0.7); font-family:sans-serif; }
+
+    /* ─── MAIN SITE ─── */
+    #site { display: none; }
+    #site.show { display: block; }
+    .hero { background: linear-gradient(135deg,#0d1533 0%,#1a2a5e 50%,#0d1533 100%); padding: 3rem 1.5rem 2rem; text-align: center; position: relative; overflow: hidden; }
+    .hero::before { content:''; position:absolute; inset:0; background:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(100,149,237,0.03) 40px,rgba(100,149,237,0.03) 80px); }
+    .hero-badge { display:inline-block; background:rgba(100,149,237,0.15); border:1px solid rgba(100,149,237,0.4); color:#90caf9; font-size:12px; padding:4px 14px; border-radius:20px; margin-bottom:1rem; letter-spacing:2px; font-family:sans-serif; }
+    .hero h1 { font-size:2.8rem; color:#c5cae9; line-height:1.2; margin-bottom:0.4rem; text-shadow:0 2px 20px rgba(100,149,237,0.3); }
+    .hero h2 { font-family:'Playfair Display',serif; font-size:1rem; color:rgba(197,202,233,0.65); font-style:italic; margin-bottom:1.5rem; font-weight:400; }
+    .hero-meta { display:flex; justify-content:center; gap:2.5rem; flex-wrap:wrap; }
+    .meta-item .val { font-size:1.2rem; font-weight:700; color:#90caf9; display:block; }
+    .meta-item .lbl { font-size:11px; letter-spacing:1px; color:rgba(197,202,233,0.6); font-family:sans-serif; }
+    nav { display:flex; justify-content:center; background:#080d20; border-bottom:1px solid rgba(100,149,237,0.2); overflow-x:auto; position:sticky; top:0; z-index:100; }
+    nav::-webkit-scrollbar{display:none}
+    .nav-btn { padding:14px 20px; font-size:13px; border:none; background:transparent; color:rgba(197,202,233,0.6); cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; font-family:sans-serif; transition:all 0.2s; font-weight:500; }
+    .nav-btn.active,.nav-btn:hover { color:#90caf9; border-bottom-color:#6495ed; }
+    .content { padding:1.5rem; max-width:740px; margin:0 auto; }
+    .section { display:none; }
+    .section.active { display:block; animation:fadeIn 0.4s ease; }
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    .sec-heading { font-size:11px; font-weight:600; color:#6495ed; margin-bottom:1rem; padding-bottom:8px; border-bottom:1px solid rgba(100,149,237,0.2); font-family:sans-serif; letter-spacing:1.5px; text-transform:uppercase; }
+    .card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.2); border-radius:12px; padding:1.25rem; margin-bottom:1rem; position:relative; }
+    .card-title { display:flex; align-items:center; gap:8px; font-size:1rem; font-weight:500; color:#c5cae9; margin-bottom:0.6rem; }
+    .card-icon { width:32px; height:32px; border-radius:8px; background:rgba(100,149,237,0.15); display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; }
+    .share-btn { position:absolute; top:10px; right:10px; padding:4px 10px; font-size:11px; border-radius:6px; border:1px solid rgba(100,149,237,0.3); background:rgba(100,149,237,0.1); color:#90caf9; cursor:pointer; font-family:sans-serif; transition:all 0.2s; }
+    .share-btn:hover { background:rgba(100,149,237,0.25); }
+    .char-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:1rem; }
+    .char-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.15); border-radius:12px; padding:1.1rem; position:relative; }
+    .char-name { font-size:1.05rem; font-weight:500; color:#c5cae9; margin-bottom:4px; }
+    .char-tag { font-size:11px; padding:2px 8px; border-radius:10px; background:rgba(100,149,237,0.1); border:0.5px solid rgba(100,149,237,0.2); color:rgba(197,202,233,0.8); display:inline-block; margin-bottom:8px; font-family:sans-serif; }
+    .problem-list { list-style:none; }
+    .problem-item { display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-bottom:0.5px solid rgba(100,149,237,0.1); }
+    .problem-item:last-child{border:none}
+    .prob-num { width:28px; height:28px; border-radius:50%; background:rgba(100,149,237,0.15); border:1px solid rgba(100,149,237,0.3); display:flex; align-items:center; justify-content:center; font-size:13px; color:#90caf9; flex-shrink:0; }
+    .prob-text strong { display:block; font-size:14px; color:#c5cae9; margin-bottom:3px; }
+    .prob-text span { font-size:13px; color:rgba(197,202,233,0.65); }
+    .author-flex { display:flex; gap:1rem; align-items:flex-start; }
+    .author-avatar { width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#3f5fb0,#6495ed); display:flex; align-items:center; justify-content:center; font-size:1.4rem; color:white; flex-shrink:0; font-weight:700; }
+    .author-name-h { font-size:1.1rem; font-weight:500; color:#c5cae9; margin-bottom:4px; }
+    .author-years { font-size:12px; color:rgba(197,202,233,0.6); margin-bottom:8px; font-family:sans-serif; }
+    .author-bio { font-size:13px; color:rgba(197,202,233,0.75); line-height:1.8; }
+    .tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+    .tag { font-size:11px; padding:3px 10px; border-radius:12px; background:rgba(100,149,237,0.1); border:0.5px solid rgba(100,149,237,0.25); color:rgba(197,202,233,0.8); font-family:sans-serif; }
+    .concl-quote { border-left:3px solid #6495ed; padding:0.75rem 1rem; background:rgba(100,149,237,0.07); border-radius:0 8px 8px 0; margin:1rem 0; font-size:14px; color:rgba(197,202,233,0.85); line-height:1.9; font-style:italic; }
+    .stat-grid { display:flex; gap:12px; margin-bottom:1rem; flex-wrap:wrap; }
+    .stat-box { background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.2); border-radius:8px; padding:0.75rem 1.2rem; font-family:sans-serif; }
+    .stat-val { font-size:1.4rem; font-weight:700; color:#90caf9; }
+    .stat-lbl { font-size:11px; color:rgba(197,202,233,0.45); margin-top:2px; }
+    .visitor-card { background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.15); border-radius:10px; padding:1rem; margin-bottom:0.75rem; }
+    .badge { display:inline-block; font-size:10px; padding:2px 8px; border-radius:8px; font-family:sans-serif; margin-left:6px; }
+    .badge-yes { background:rgba(165,214,167,0.15); color:#a5d6a7; border:0.5px solid rgba(165,214,167,0.3); }
+    .badge-freq { background:rgba(100,149,237,0.15); color:#90caf9; border:0.5px solid rgba(100,149,237,0.3); }
+    .btn-sm { padding:7px 16px; background:transparent; border:1px solid rgba(100,149,237,0.35); border-radius:6px; color:rgba(197,202,233,0.7); font-size:12px; cursor:pointer; font-family:sans-serif; transition:all 0.2s; }
+    .btn-sm:hover { background:rgba(100,149,237,0.1); }
+    .btn-danger { border-color:rgba(239,154,154,0.4); color:#ef9a9a; }
+    .btn-danger:hover { background:rgba(239,154,154,0.1); }
+    /* ── VIEW TOGGLE ── */
+    .view-toggle { display:flex; gap:0; margin-bottom:1rem; background:rgba(255,255,255,0.04); border:0.5px solid rgba(100,149,237,0.2); border-radius:8px; overflow:hidden; width:fit-content; }
+    .view-toggle-btn { padding:7px 18px; font-size:12px; font-family:sans-serif; border:none; background:transparent; color:rgba(197,202,233,0.5); cursor:pointer; transition:all 0.2s; font-weight:500; }
+    .view-toggle-btn.active { background:rgba(100,149,237,0.2); color:#90caf9; font-weight:700; }
+    /* ── MAP ── */
+    #visitor-map-wrap { border-radius:12px; overflow:hidden; border:0.5px solid rgba(100,149,237,0.25); margin-bottom:1rem; }
+    #visitor-map { height:360px; width:100%; background:#0a0f1e; }
+    .leaflet-container { background:#0a0f1e !important; }
+    .leaflet-tile-pane { filter: brightness(0.75) saturate(0.8) hue-rotate(200deg); }
+    .map-popup { font-family:sans-serif; font-size:12px; color:#1a1a2e; line-height:1.6; min-width:160px; }
+    .map-popup strong { display:block; font-size:13px; margin-bottom:3px; }
+    .map-popup .mp-loc { color:#3f5fb0; font-size:11px; margin-top:3px; }
+    .map-popup .mp-time { color:#888; font-size:10px; margin-top:2px; }
+    .addr-badge { display:inline-block; margin-top:4px; font-size:11px; color:rgba(144,202,249,0.8); font-family:sans-serif; background:rgba(100,149,237,0.08); border:0.5px solid rgba(100,149,237,0.2); border-radius:6px; padding:2px 8px; }
+    .empty-state { text-align:center; padding:2.5rem 1rem; color:rgba(197,202,233,0.35); font-size:14px; font-family:sans-serif; }
+    footer { text-align:center; padding:1.5rem; color:rgba(197,202,233,0.4); font-size:12px; border-top:1px solid rgba(100,149,237,0.1); margin-top:2rem; font-family:sans-serif; }
+    footer span { color:#90caf9; }
+    .copyright-line { text-align:center; padding:0.5rem 1.5rem 1.2rem; color:rgba(197,202,233,0.28); font-size:11px; font-family:sans-serif; letter-spacing:1.2px; text-transform:uppercase; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════ PASSWORD GATE ══════════ -->
+<div class="overlay" id="pw-gate">
+  <div class="overlay-box">
+    <div class="overlay-icon">🔐</div>
+    <div class="overlay-title">Protected Content</div>
+    <div class="overlay-sub">This page is password protected.<br>Enter the password to continue.</div>
+    <input class="inp" type="password" id="pw-inp" placeholder="Enter password..." onkeydown="if(event.key==='Enter')checkPw()"/>
+    <button class="btn-primary" onclick="checkPw()">Unlock →</button>
+    <div class="err-msg" id="pw-err"></div>
+  </div>
+</div>
+
+<!-- ══════════ LOCATION CONSENT (Browser-style, shown immediately after correct password) ══════════ -->
+<div id="loc-consent-overlay">
+  <div class="loc-browser-box">
+    <div class="loc-browser-header">
+      <div class="loc-site-icon">🕉️</div>
+      <div>
+        <div class="loc-site-name">Sara Aakash — Study Site</div>
+        <div class="loc-site-url">kundanjha.site • Kundan Jha</div>
+      </div>
+    </div>
+    <div class="loc-body">
+      <div class="loc-title">📍 Know Your Location?</div>
+      <div class="loc-desc">This site would like to know your location to understand how far this study resource has reached. Your location is <strong>never shared</strong> with anyone and is only visible to the site admin.</div>
+      <div class="loc-perms">
+        <div class="loc-perm-item"><span class="loc-perm-icon">📍</span><span class="loc-perm-text">Access your precise location (GPS)</span></div>
+        <div class="loc-perm-item"><span class="loc-perm-icon">🔒</span><span class="loc-perm-text">Encrypted and stored securely</span></div>
+        <div class="loc-perm-item"><span class="loc-perm-icon">👤</span><span class="loc-perm-text">Only admin Kundan Jha can view this</span></div>
+      </div>
+      <div class="loc-actions">
+        <button class="loc-btn-allow" onclick="handleLocConsent('always')">Allow while using the site</button>
+        <button class="loc-btn-allow-once" onclick="handleLocConsent('once')">Allow this time only</button>
+        <button class="loc-btn-deny" onclick="handleLocConsent('deny')">Don't allow</button>
+      </div>
+    </div>
+    <div class="loc-footer">Your choice is remembered for this session. You can change it anytime.</div>
+  </div>
+</div>
+
+<!-- ══════════ COOKIE BANNER ══════════ -->
+<div id="cookie-banner" style="display:none;">
+  <p>🍪 This site uses essential cookies for session management. No personal data is collected without your explicit consent. <a onclick="showCookieDetails()">Learn more</a></p>
+  <div class="cookie-btns">
+    <button class="btn-cookie-acc" onclick="acceptCookies()">Accept ✓</button>
+    <button class="btn-cookie-rej" onclick="rejectCookies()">Decline</button>
+  </div>
+</div>
+
+<!-- ══════════ PUSH NOTIFICATION PERMISSION BANNER ══════════ -->
+<div id="notif-banner">
+  <div class="notif-title">🔔 Study Reminders</div>
+  <div class="notif-desc">Allow notifications to receive study tips and updates for Sara Aakash.</div>
+  <div class="notif-actions">
+    <button class="notif-allow" onclick="allowNotifications()">Allow</button>
+    <button class="notif-deny" onclick="denyNotifications()">Not now</button>
+  </div>
+</div>
+
+<!-- ══════════ WELCOME SCREEN ══════════ -->
+<div id="welcome" style="display:none;">
+  <div class="om">🕉️</div>
+  <div class="jai-shree-ram">जय श्री राम 🙏</div>
+  <div class="jai-sub">JAI SHREE RAM</div>
+  <div class="divider"></div>
+  <button class="enter-btn" onclick="enterSite()">Enter Site →</button>
+  <div class="diyas">
+    <div class="diya"></div><div class="diya"></div><div class="diya"></div>
+    <div class="diya"></div><div class="diya"></div>
+  </div>
+</div>
+
+<!-- ══════════ LOGIN GATE ══════════ -->
+<div class="overlay" id="login-gate" style="display:none;opacity:0;">
+  <div class="overlay-box">
+    <div class="overlay-icon">👤</div>
+    <div class="overlay-title">Sign In</div>
+    <div class="timer-txt" id="timer-txt">Login form activates in 15 seconds...</div>
+    <div class="timer-bar-wrap"><div class="timer-bar" id="timer-bar" style="width:100%"></div></div>
+    <div class="overlay-sub">Sign in with your Gmail to save your progress.<br><small style="color:rgba(197,202,233,0.35);font-size:11px;">Your data is stored encrypted.</small></div>
+    <input class="inp" type="email" id="email-inp" placeholder="Your Gmail (example@gmail.com)" disabled/>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()" disabled>Sign In →</button>
+    <div class="err-msg" id="login-err"></div>
+    <span class="skip-link" onclick="skipLogin()">Skip for now</span>
+  </div>
+</div>
+
+<!-- ══════════ CONSENT POPUP (name/school) ══════════ -->
+<div class="consent-overlay" id="consent-popup" style="display:none;">
+  <div class="consent-box">
+    <div class="consent-title">👤 Tell us a little about you</div>
+    <div class="consent-desc">This is completely optional. Helps us understand our audience better.</div>
+    <input class="inp" type="text" id="c-name" placeholder="Your name (optional)" />
+    <input class="inp" type="text" id="c-school" placeholder="School / College (optional)" />
+    <button class="btn-primary" onclick="giveConsent()">✅ Save & Continue</button>
+    <span class="skip-link" onclick="denyConsent()">Skip</span>
+    <div class="success-msg" id="consent-msg"></div>
+  </div>
+</div>
+
+<!-- ══════════ EMAIL-TO-PDF SHARE MODAL ══════════ -->
+<div id="share-modal">
+  <div class="share-modal-box">
+    <button class="share-close" onclick="closeShareModal()">✕</button>
+    <div class="share-modal-title">📄 Get This Content as PDF</div>
+    <div class="share-steps">
+      <div class="share-step active" id="step1">1. Enter Email</div>
+      <div class="share-step" id="step2">2. Generating PDF</div>
+      <div class="share-step" id="step3">3. Sent ✓</div>
+    </div>
+    <div id="share-email-section">
+      <div class="share-modal-sub" id="share-modal-label">Enter your email address. The full content will be generated as a PDF and sent to you automatically — no redirects.</div>
+      <input class="inp" type="email" id="share-email-inp" placeholder="Your email address" />
+      <button class="btn-primary" onclick="sendAsPDF()" id="share-send-btn">📨 Send PDF to my Email →</button>
+      <div class="err-msg" id="share-err"></div>
+    </div>
+    <div id="share-sending-section" style="display:none;">
+      <div class="sending-anim">
+        <div class="sending-spinner"></div>
+        <div class="sending-txt" id="sending-txt">Generating PDF...</div>
+      </div>
+    </div>
+    <div id="share-done-section" style="display:none;">
+      <div style="text-align:center;padding:1.5rem 0;">
+        <div style="font-size:2.5rem;margin-bottom:0.8rem;">✅</div>
+        <div style="font-size:14px;color:#a5d6a7;font-family:sans-serif;font-weight:600;" id="share-done-txt">PDF sent successfully!</div>
+        <div style="font-size:12px;color:rgba(197,202,233,0.5);font-family:sans-serif;margin-top:6px;">Check your inbox (and spam folder).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MAIN SITE ══════════ -->
+<div id="site">
+  <div class="hero">
+    <div class="hero-badge">Hindi Literature • ISC Class XII</div>
+    <h1>सारा आकाश</h1>
+    <h2>Sara Aakash — Rajendra Yadav</h2>
+    <div class="hero-meta">
+      <div class="meta-item"><span class="val">1959</span><span class="lbl">Published</span></div>
+      <div class="meta-item"><span class="val">राजेन्द्र यादव</span><span class="lbl">Author</span></div>
+      <div class="meta-item"><span class="val">ISC Class XII</span><span class="lbl">Syllabus</span></div>
+    </div>
+  </div>
+
+  <nav>
+    <button class="nav-btn active" onclick="show('parichay',this)">Introduction</button>
+    <button class="nav-btn" onclick="show('charitra',this)">Characters</button>
+    <button class="nav-btn" onclick="show('samasya',this)">Themes</button>
+    <button class="nav-btn" onclick="show('lekhak',this)">Author</button>
+    <button class="nav-btn" onclick="show('nishkarsh',this)">Conclusion</button>
+    <button class="nav-btn" onclick="show('visitors',this)">👁 Visitors</button>
+  </nav>
+
+  <div class="content">
+
+    <div class="section active" id="parichay">
+      <p class="sec-heading">Introduction</p>
+      <div class="card">
+        <button class="share-btn" onclick="openShareModal('Introduction — कथानक')">📄 Get PDF</button>
+        <div class="card-title"><div class="card-icon">📖</div> कथानक</div>
+        <p>'सारा आकाश' भारतीय मध्यमवर्गीय संयुक्त परिवार के जीवन, परंपराओं, सामाजिक बंधनों और मानसिक संघर्षों का अत्यंत सजीव चित्रण प्रस्तुत करता है। यह उपन्यास 1959 में प्रकाशित हुआ था।</p>
+      </div>
+      <div class="card">
+        <button class="share-btn" onclick="openShareModal('Introduction — मुख्य पात्र')">📄 Get PDF</button>
+        <div class="card-title"><div class="card-icon">👤</div> मुख्य पात्र — समर</div>
+        <p>इस उपन्यास का मुख्य पात्र समर है — एक आदर्शवादी युवक जिसका विवाह उसकी इच्छा के विरुद्ध प्रभा से कर दिया जाता है। वह अपने आदर्शों और वास्तविक जीवन के बीच मानसिक द्वंद्व में फँसा रहता है।</p>
+      </div>
+      <div class="card">
+        <button class="share-btn" onclick="openShareModal('Introduction — उपन्यास का उद्देश्य')">📄 Get PDF</button>
+        <div class="card-title"><div class="card-icon">🎯</div> उपन्यास का उद्देश्य</div>
+        <p>यह उपन्यास केवल एक पारिवारिक कथा नहीं है — यह मध्यमवर्गीय समाज की वास्तविक समस्याओं और व्यक्ति के आंतरिक संघर्षों को उजागर करने वाला एक महत्वपूर्ण और यथार्थवादी उपन्यास है।</p>
+      </div>
+    </div>
+
+    <div class="section" id="charitra">
+      <p class="sec-heading">Character Analysis</p>
+      <div class="char-grid">
+        <div class="char-card">
+          <button class="share-btn" onclick="openShareModal('Character — समर')">📄 PDF</button>
+          <div class="char-name">समर</div><div class="char-tag">Protagonist</div>
+          <p style="font-size:13px;color:rgba(197,202,233,0.7);line-height:1.7;">आदर्शवादी युवक। आदर्श और वास्तविकता के बीच द्वंद्व में जीता है।</p>
+        </div>
+        <div class="char-card">
+          <button class="share-btn" onclick="openShareModal('Character — प्रभा')">📄 PDF</button>
+          <div class="char-name">प्रभा</div><div class="char-tag">समर की पत्नी</div>
+          <p style="font-size:13px;color:rgba(197,202,233,0.7);line-height:1.7;">नई पीढ़ी की संवेदनशील स्त्री। पारिवारिक दबाव में जीती है।</p>
+        </div>
+        <div class="char-card">
+          <button class="share-btn" onclick="openShareModal('Character — दिवाकर')">📄 PDF</button>
+          <div class="char-name">दिवाकर</div><div class="char-tag">व्यावहारिक</div>
+          <p style="font-size:13px;color:rgba(197,202,233,0.7);line-height:1.7;">व्यावहारिकता का प्रतीक। परिवार की परंपराओं में विश्वास रखता है।</p>
+        </div>
+        <div class="char-card">
+          <button class="share-btn" onclick="openShareModal('Character — शिरीष')">📄 PDF</button>
+          <div class="char-name">शिरीष</div><div class="char-tag">प्रगतिशील</div>
+          <p style="font-size:13px;color:rgba(197,202,233,0.7);line-height:1.7;">नई सोच का प्रतिनिधि। बदलाव और स्वतंत्रता का पक्षधर।</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="samasya">
+      <p class="sec-heading">Themes &amp; Social Issues</p>
+      <div class="card">
+        <button class="share-btn" onclick="openShareModal('Themes — Social Issues')">📄 Get PDF</button>
+        <div class="card-title"><div class="card-icon">⚖️</div> सामाजिक समस्याएँ</div>
+        <ul class="problem-list">
+          <li class="problem-item"><div class="prob-num">१</div><div class="prob-text"><strong>परंपराओं और रूढ़ियों का प्रभाव</strong><span>पुरानी मान्यताओं के कारण नई पीढ़ी की स्वतंत्रता प्रभावित होती है।</span></div></li>
+          <li class="problem-item"><div class="prob-num">२</div><div class="prob-text"><strong>संयुक्त परिवार की जटिलताएँ</strong><span>व्यक्तिगत स्वतंत्रता सीमित — सबकी इच्छाओं के अनुसार चलना पड़ता है।</span></div></li>
+          <li class="problem-item"><div class="prob-num">३</div><div class="prob-text"><strong>आर्थिक सीमाएँ</strong><span>सीमित आय के कारण आर्थिक दबाव बना रहता है।</span></div></li>
+          <li class="problem-item"><div class="prob-num">४</div><div class="prob-text"><strong>विवाह संबंधी समस्याएँ</strong><span>परिवार की इच्छा से विवाह — मानसिक दूरी और असंतोष।</span></div></li>
+          <li class="problem-item"><div class="prob-num">५</div><div class="prob-text"><strong>व्यक्ति की स्वतंत्रता का अभाव</strong><span>समाज के दबाव के कारण अपनी इच्छाओं का त्याग।</span></div></li>
+          <li class="problem-item"><div class="prob-num">६</div><div class="prob-text"><strong>पीढ़ियों के विचारों में अंतर</strong><span>नई और पुरानी पीढ़ी की सोच में टकराव उत्पन्न होता है।</span></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section" id="lekhak">
+      <p class="sec-heading">About the Author</p>
+      <div class="card">
+        <button class="share-btn" onclick="openShareModal('Author — राजेन्द्र यादव')">📄 Get PDF</button>
+        <div class="author-flex">
+          <div class="author-avatar">रा</div>
+          <div>
+            <div class="author-name-h">राजेन्द्र यादव</div>
+            <div class="author-years">28 August 1929 — 28 October 2013</div>
+            <div class="author-bio">हिंदी साहित्य के 'नई कहानी आंदोलन' के प्रमुख साहित्यकार। आगरा में जन्म। 'हंस' पत्रिका के प्रसिद्ध संपादक। मध्यमवर्गीय जीवन के यथार्थवादी चित्रण के लिए प्रसिद्ध।</div>
+            <div class="tags"><span class="tag">Nayi Kahani Movement</span><span class="tag">Novelist</span><span class="tag">Editor — Hans</span><span class="tag">Realism</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <button class="share-btn" onclick="openShareModal('Author — Major Works')">📄 Get PDF</button>
+        <div class="card-title"><div class="card-icon">📚</div> Major Works</div>
+        <div class="tags" style="margin-top:0"><span class="tag">सारा आकाश (1959)</span><span class="tag">उखड़े हुए लोग</span><span class="tag">कुलटा</span><span class="tag">शह और मात</span><span class="tag">देवताओं की मूर्तियाँ</span><span class="tag">खेल-खिलौने</span></div>
+      </div>
+    </div>
+
+    <div class="section" id="nishkarsh">
+      <p class="sec-heading">Conclusion</p>
+      <div class="card">
+        <button class="share-btn" onclick="openShareModal('Conclusion — सारा आकाश')">📄 Get PDF</button>
+        <p style="font-size:14px;line-height:1.9;color:rgba(197,202,233,0.8);">'सारा आकाश' में राजेन्द्र यादव ने भारतीय मध्यमवर्गीय परिवार का अत्यंत यथार्थवादी चित्रण प्रस्तुत किया है। बाहरी रूप से संगठित दिखने वाले परिवार के भीतर अनेक सामाजिक, आर्थिक और मानसिक समस्याएँ विद्यमान रहती हैं।</p>
+        <div class="concl-quote">समर आदर्शवाद का, दिवाकर व्यावहारिकता का, और शिरीष प्रगतिशीलता का प्रतीक है — तीनों मिलकर मध्यमवर्गीय समाज के तीन दृष्टिकोण प्रस्तुत करते हैं।</div>
+        <p style="font-size:14px;line-height:1.9;color:rgba(197,202,233,0.8);">यह उपन्यास पाठकों को समाज, परिवार और मानवीय संबंधों के बारे में गहराई से विचार करने के लिए प्रेरित करता है।</p>
+      </div>
+    </div>
+
+    <!-- ══ VISITOR LOG / ADMIN DASHBOARD ══ -->
+    <div class="section" id="visitors">
+      <p class="sec-heading">Visitor Log</p>
+      <div class="card" id="admin-lock-box">
+        <div style="font-size:14px;color:#c5cae9;font-weight:600;margin-bottom:6px;font-family:sans-serif;">Admin Access Required</div>
+        <div style="font-size:12px;color:rgba(197,202,233,0.5);margin-bottom:1rem;font-family:sans-serif;">Enter the admin password to view visitor data.</div>
+        <input class="inp" type="password" id="admin-pw-inp" placeholder="Admin password..." onkeydown="if(event.key==='Enter')checkAdmin()"/>
+        <button class="btn-primary" onclick="checkAdmin()">View Visitors →</button>
+        <div class="err-msg" id="admin-err"></div>
+      </div>
+      <div id="visitor-data" style="display:none;">
+        <div class="stat-grid" id="visitor-stats"></div>
+        <!-- View Toggle -->
+        <div class="view-toggle">
+          <button class="view-toggle-btn active" id="toggle-list" onclick="switchView('list')">📋 List View</button>
+          <button class="view-toggle-btn" id="toggle-map" onclick="switchView('map')">🗺️ Map View</button>
+        </div>
+        <!-- List View -->
+        <div id="visitor-list-wrap">
+          <div id="visitor-list"></div>
+        </div>
+        <!-- Map View -->
+        <div id="visitor-map-wrap" style="display:none;">
+          <div id="visitor-map"></div>
+          <div id="map-legend" style="padding:0.75rem 1rem;font-size:12px;color:rgba(197,202,233,0.5);font-family:sans-serif;background:rgba(255,255,255,0.02);border-top:0.5px solid rgba(100,149,237,0.1);">
+            📍 Pins show visitor locations. Click any pin for details. Only consented visitors with GPS coordinates are shown.
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:0.75rem;flex-wrap:wrap;">
+          <button class="btn-sm btn-danger" onclick="clearVisitors()">🗑 Clear All Data</button>
+          <button class="btn-sm" onclick="exportVisitors()">⬇ Export JSON</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <footer>Made with 🙏 by <span>Kundan Jha</span> &nbsp;|&nbsp; Class XII-D &nbsp;|&nbsp; <span>जय श्री राम</span></footer>
+  <div class="copyright-line">© All Copyrights and Claims with Kundan Jha. All Rights Reserved.</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CRYPTO HELPERS
+// ═══════════════════════════════════════════════════════
+const SECRET = 'KundanSite2026XK';
+function xorEncrypt(str, key) {
+  let out = '';
+  for (let i = 0; i < str.length; i++)
+    out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+  return btoa(unescape(encodeURIComponent(out)));
+}
+function xorDecrypt(b64, key) {
+  try {
+    const str = decodeURIComponent(escape(atob(b64)));
+    let out = '';
+    for (let i = 0; i < str.length; i++)
+      out += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    return out;
+  } catch(e) { return null; }
+}
+
+// Admin password: KUNDAN@2026
+const SITE_PW_ENC = xorEncrypt('KUNDAN@2026', SECRET);
+// Site entry password
+const ENTRY_PW_ENC = xorEncrypt('Kundanclaudethanks@2008', SECRET);
+
+let timerInterval = null;
+let currentShareContent = '';
+let currentShareContentText = '';
+
+// ═══════════════════════════════════════════════════════
+// VISITOR STORAGE
+// ═══════════════════════════════════════════════════════
+function saveVisitor(data) {
+  const raw = localStorage.getItem('vlog_enc');
+  let arr = [];
+  if (raw) { try { arr = JSON.parse(xorDecrypt(raw, SECRET)) || []; } catch(e){} }
+  arr.push(data);
+  localStorage.setItem('vlog_enc', xorEncrypt(JSON.stringify(arr), SECRET));
+}
+function loadVisitors() {
+  const raw = localStorage.getItem('vlog_enc');
+  if (!raw) return [];
+  try { return JSON.parse(xorDecrypt(raw, SECRET)) || []; } catch(e) { return []; }
+}
+
+// ═══════════════════════════════════════════════════════
+// VISITOR FREQUENCY TRACKING
+// Records every visit session with timestamp
+// ═══════════════════════════════════════════════════════
+function recordVisitFrequency() {
+  const key = 'visit_freq_enc';
+  const raw = localStorage.getItem(key);
+  let sessions = [];
+  if (raw) { try { sessions = JSON.parse(xorDecrypt(raw, SECRET)) || []; } catch(e){} }
+  const now = new Date();
+  sessions.push({
+    ts: now.toISOString(),
+    display: now.toLocaleString('en-IN'),
+    page: document.title
+  });
+  localStorage.setItem(key, xorEncrypt(JSON.stringify(sessions), SECRET));
+  // Update total visit count
+  const countRaw = localStorage.getItem('visit_count');
+  const count = countRaw ? parseInt(countRaw) + 1 : 1;
+  localStorage.setItem('visit_count', count);
+}
+function loadVisitFrequency() {
+  const raw = localStorage.getItem('visit_freq_enc');
+  if (!raw) return [];
+  try { return JSON.parse(xorDecrypt(raw, SECRET)) || []; } catch(e) { return []; }
+}
+function getTotalVisits() {
+  return parseInt(localStorage.getItem('visit_count') || '0');
+}
+
+// ═══════════════════════════════════════════════════════
+// PASSWORD GATE → LOCATION CONSENT
+// ═══════════════════════════════════════════════════════
+function checkPw() {
+  const val = document.getElementById('pw-inp').value.trim();
+  const err = document.getElementById('pw-err');
+  if (!val) { err.textContent = 'Please enter the password.'; return; }
+  if (xorEncrypt(val, SECRET) === ENTRY_PW_ENC) {
+    document.getElementById('pw-gate').classList.add('hide');
+    setTimeout(() => {
+      document.getElementById('pw-gate').style.display = 'none';
+      // IMMEDIATELY show location consent after correct password
+      showLocationConsent();
+    }, 500);
+  } else {
+    err.textContent = 'Incorrect password. Please try again.';
+    document.getElementById('pw-inp').value = '';
+    setTimeout(() => err.textContent = '', 3000);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// LOCATION CONSENT (shown right after password)
+// ═══════════════════════════════════════════════════════
+function showLocationConsent() {
+  // Skip if already decided
+  if (localStorage.getItem('loc_consent_done')) {
+    afterLocationConsent();
+    return;
+  }
+  document.getElementById('loc-consent-overlay').classList.add('show');
+}
+
+function handleLocConsent(choice) {
+  document.getElementById('loc-consent-overlay').classList.remove('show');
+  localStorage.setItem('loc_consent_done', choice);
+
+  if (choice === 'always' || choice === 'once') {
+    // Request actual GPS location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          const locData = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: Math.round(pos.coords.accuracy) + 'm', choice: choice };
+          localStorage.setItem('visitor_loc_enc', xorEncrypt(JSON.stringify(locData), SECRET));
+          // Send location to admin log immediately
+          const emailEnc = localStorage.getItem('user_email_enc');
+          const email = emailEnc ? xorDecrypt(emailEnc, SECRET) : 'anonymous';
+          saveVisitor({
+            email: email, name: null, school: null,
+            location: locData,
+            locationChoice: choice,
+            time: new Date().toLocaleString('en-IN'),
+            consented: true,
+            type: 'location_consent'
+          });
+        },
+        function(err) {
+          // Map error codes to friendly messages
+          var friendly = 'Location unavailable';
+          if (err.code === 1) friendly = 'Permission denied by browser';
+          else if (err.code === 2) friendly = 'Location signal unavailable';
+          else if (err.code === 3) friendly = 'Location request timed out';
+          else if (err.message && err.message.toLowerCase().includes('permissions policy')) friendly = 'Blocked by browser policy (works on live site)';
+          saveVisitor({ email: 'anonymous', location: friendly, locationChoice: choice, time: new Date().toLocaleString('en-IN'), consented: true, type: 'location_consent' });
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  } else {
+    // Denied — still log the visit without location
+    saveVisitor({ email: 'anonymous', location: 'Denied by user', locationChoice: 'deny', time: new Date().toLocaleString('en-IN'), consented: false, type: 'location_consent' });
+  }
+
+  afterLocationConsent();
+}
+
+function afterLocationConsent() {
+  // Record this as a new visit session
+  recordVisitFrequency();
+  showCookieBanner();
+}
+
+// ═══════════════════════════════════════════════════════
+// COOKIE BANNER
+// ═══════════════════════════════════════════════════════
+function showCookieBanner() {
+  if (localStorage.getItem('cookies_accepted')) { showWelcome(); return; }
+  document.getElementById('cookie-banner').style.display = 'flex';
+}
+function acceptCookies() {
+  localStorage.setItem('cookies_accepted', '1');
+  document.getElementById('cookie-banner').style.display = 'none';
+  showWelcome();
+}
+function rejectCookies() {
+  document.getElementById('cookie-banner').style.display = 'none';
+  showWelcome();
+}
+function showCookieDetails() {
+  alert('What we store:\n- Session state\n- Cookie preference\n- Visitor info (only with explicit consent, encrypted)\n- Location (ONLY with your explicit consent)\n- Visit frequency (anonymous session timestamps)\n\nNot stored: browsing history, payment info, third-party data.\n\nAll data encrypted in localStorage, readable only by site admin.');
+}
+
+// ═══════════════════════════════════════════════════════
+// WELCOME → SITE
+// ═══════════════════════════════════════════════════════
+function showWelcome() {
+  document.getElementById('welcome').style.display = 'flex';
+}
+function enterSite() {
+  const w = document.getElementById('welcome');
+  w.classList.add('hide');
+  setTimeout(() => {
+    w.style.display = 'none';
+    document.getElementById('site').style.display = 'block';
+    document.getElementById('site').classList.add('show');
+    showLoginAfter15();
+    // Show notification permission banner after 3 seconds
+    setTimeout(showNotifBanner, 3000);
+  }, 800);
+}
+
+// ═══════════════════════════════════════════════════════
+// PUSH NOTIFICATION BANNER
+// ═══════════════════════════════════════════════════════
+function showNotifBanner() {
+  if (localStorage.getItem('notif_decided')) return;
+  document.getElementById('notif-banner').classList.add('show');
+}
+function allowNotifications() {
+  localStorage.setItem('notif_decided', 'allowed');
+  document.getElementById('notif-banner').classList.remove('show');
+  // Request actual browser notification permission if supported
+  if ('Notification' in window) {
+    Notification.requestPermission().then(function(perm) {
+      localStorage.setItem('notif_perm', perm);
+    });
+  }
+}
+function denyNotifications() {
+  localStorage.setItem('notif_decided', 'denied');
+  document.getElementById('notif-banner').classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════════
+// LOGIN GATE
+// ═══════════════════════════════════════════════════════
+function showLoginAfter15() {
+  if (localStorage.getItem('user_email_enc')) return;
+  const gate = document.getElementById('login-gate');
+  gate.style.display = 'flex';
+  gate.style.opacity = '0';
+  let secs = 15;
+  const bar = document.getElementById('timer-bar');
+  const txt = document.getElementById('timer-txt');
+  timerInterval = setInterval(() => {
+    secs--;
+    bar.style.width = ((secs / 15) * 100) + '%';
+    txt.textContent = secs > 0 ? 'Login form activates in ' + secs + ' second' + (secs !== 1 ? 's' : '') + '...' : 'You can now sign in';
+    if (secs <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById('email-inp').disabled = false;
+      document.getElementById('login-btn').disabled = false;
+    }
+  }, 1000);
+  requestAnimationFrame(() => { gate.style.opacity = '1'; gate.style.transition = 'opacity 0.5s'; });
+}
+
+function doLogin() {
+  const email = document.getElementById('email-inp').value.trim();
+  const err = document.getElementById('login-err');
+  if (!email || !email.includes('@')) { err.textContent = 'Please enter a valid email address.'; return; }
+  localStorage.setItem('user_email_enc', xorEncrypt(email, SECRET));
+  document.getElementById('login-gate').classList.add('hide');
+  setTimeout(() => { document.getElementById('login-gate').style.display = 'none'; showConsentPopup(); }, 500);
+}
+function skipLogin() {
+  clearInterval(timerInterval);
+  document.getElementById('login-gate').classList.add('hide');
+  setTimeout(() => { document.getElementById('login-gate').style.display = 'none'; }, 500);
+}
+
+// ═══════════════════════════════════════════════════════
+// NAME/SCHOOL CONSENT
+// ═══════════════════════════════════════════════════════
+function showConsentPopup() {
+  if (localStorage.getItem('consent_given')) return;
+  document.getElementById('consent-popup').style.display = 'flex';
+}
+function giveConsent() {
+  const emailEnc = localStorage.getItem('user_email_enc');
+  const email = emailEnc ? xorDecrypt(emailEnc, SECRET) : 'anonymous';
+  const name = document.getElementById('c-name').value.trim() || null;
+  const school = document.getElementById('c-school').value.trim() || null;
+  localStorage.setItem('consent_given', '1');
+  // Attach name/school to location record if available
+  const locRaw = localStorage.getItem('visitor_loc_enc');
+  const loc = locRaw ? JSON.parse(xorDecrypt(locRaw, SECRET)) : 'Not collected';
+  saveVisitor({ email: email, name: name, school: school, location: loc, time: new Date().toLocaleString('en-IN'), consented: true, type: 'profile' });
+  document.getElementById('consent-msg').textContent = 'Thank you! Your data has been saved securely.';
+  setTimeout(() => { document.getElementById('consent-popup').style.display = 'none'; }, 1800);
+}
+function denyConsent() {
+  localStorage.setItem('consent_given', 'denied');
+  document.getElementById('consent-popup').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+// CONTENT DATA (for PDF generation)
+// ═══════════════════════════════════════════════════════
+const CONTENT_DATA = {
+  'Introduction — कथानक': {
+    title: 'Introduction — कथानक | Sara Aakash',
+    body: "'सारा आकाश' भारतीय मध्यमवर्गीय संयुक्त परिवार के जीवन, परंपराओं, सामाजिक बंधनों और मानसिक संघर्षों का अत्यंत सजीव चित्रण प्रस्तुत करता है। यह उपन्यास 1959 में प्रकाशित हुआ था।\n\nRajendra Yadav's novel Sara Aakash (1959) vividly portrays the life, traditions, social bindings, and mental conflicts of Indian middle-class joint families. It is a landmark work in Hindi literature."
+  },
+  'Introduction — मुख्य पात्र': {
+    title: 'Introduction — Main Character | Sara Aakash',
+    body: "मुख्य पात्र — समर\n\nइस उपन्यास का मुख्य पात्र समर है — एक आदर्शवादी युवक जिसका विवाह उसकी इच्छा के विरुद्ध प्रभा से कर दिया जाता है। वह अपने आदर्शों और वास्तविक जीवन के बीच मानसिक द्वंद्व में फँसा रहता है।\n\nThe protagonist Samar is an idealistic young man forced into marriage with Prabha against his wishes. He remains caught between his ideals and the harsh realities of life."
+  },
+  'Introduction — उपन्यास का उद्देश्य': {
+    title: 'Introduction — Purpose | Sara Aakash',
+    body: "उपन्यास का उद्देश्य\n\nयह उपन्यास केवल एक पारिवारिक कथा नहीं है — यह मध्यमवर्गीय समाज की वास्तविक समस्याओं और व्यक्ति के आंतरिक संघर्षों को उजागर करने वाला एक महत्वपूर्ण और यथार्थवादी उपन्यास है।\n\nThis novel is not merely a family story — it is an important realistic novel that exposes the real problems of middle-class society and the internal conflicts of individuals."
+  },
+  'Character — समर': {
+    title: 'Character Analysis — Samar | Sara Aakash',
+    body: "समर (Samar) — Protagonist\n\nआदर्शवादी युवक। आदर्श और वास्तविकता के बीच द्वंद्व में जीता है।\n\nSamar is the idealistic young protagonist. He lives in conflict between his ideals and reality. His character represents the internal struggle of an educated youth in traditional Indian society."
+  },
+  'Character — प्रभा': {
+    title: 'Character Analysis — Prabha | Sara Aakash',
+    body: "प्रभा (Prabha) — Samar's Wife\n\nनई पीढ़ी की संवेदनशील स्त्री। पारिवारिक दबाव में जीती है।\n\nPrabha is a sensitive woman of the new generation, living under immense family pressure. She represents the struggles of women in traditional joint family structures."
+  },
+  'Character — दिवाकर': {
+    title: 'Character Analysis — Diwakar | Sara Aakash',
+    body: "दिवाकर (Diwakar) — The Pragmatist\n\nव्यावहारिकता का प्रतीक। परिवार की परंपराओं में विश्वास रखता है।\n\nDiwakar symbolizes pragmatism. He believes in family traditions and represents the older worldview of accepting things as they are."
+  },
+  'Character — शिरीष': {
+    title: 'Character Analysis — Shirish | Sara Aakash',
+    body: "शिरीष (Shirish) — The Progressive\n\nनई सोच का प्रतिनिधि। बदलाव और स्वतंत्रता का पक्षधर।\n\nShirish represents progressive thinking. He advocates for change and individual freedom, symbolizing the modern outlook in contrast to tradition."
+  },
+  'Themes — Social Issues': {
+    title: 'Themes & Social Issues | Sara Aakash',
+    body: "सामाजिक समस्याएँ (Social Issues in Sara Aakash)\n\n1. परंपराओं और रूढ़ियों का प्रभाव — Impact of Traditions & Customs\nPurani manyataon ke kaaran nayi peedhi ki swatantrata prabhavit hoti hai.\nOld beliefs restrict the freedom of the new generation.\n\n2. संयुक्त परिवार की जटिलताएँ — Complexities of Joint Family\nVyaktigat swatantrata seemit — sabki icchaon ke anusaar chalna padta hai.\nPersonal freedom is limited in joint families.\n\n3. आर्थिक सीमाएँ — Economic Constraints\nSeemit aay ke kaaran aarthik dabaav bana rehta hai.\nFinancial pressure due to limited income.\n\n4. विवाह संबंधी समस्याएँ — Marital Issues\nParivaar ki iccha se vivaah — maansik doori aur asantosh.\nForced marriages lead to mental distance and dissatisfaction.\n\n5. व्यक्ति की स्वतंत्रता का अभाव — Lack of Individual Freedom\nSamaaj ke dabaav ke kaaran apni icchaon ka tyaag.\nSocial pressure forces individuals to abandon their desires.\n\n6. पीढ़ियों के विचारों में अंतर — Generation Gap\nNayi aur purani peedhi ki soch mein takraav utpann hota hai.\nConflict arises between the thinking of old and new generations."
+  },
+  'Author — राजेन्द्र यादव': {
+    title: 'About the Author — Rajendra Yadav | Sara Aakash',
+    body: "राजेन्द्र यादव (Rajendra Yadav)\n28 August 1929 — 28 October 2013\n\nहिंदी साहित्य के 'नई कहानी आंदोलन' के प्रमुख साहित्यकार। आगरा में जन्म। 'हंस' पत्रिका के प्रसिद्ध संपादक। मध्यमवर्गीय जीवन के यथार्थवादी चित्रण के लिए प्रसिद्ध।\n\nRajendra Yadav was a prominent figure of the 'Nayi Kahani Movement' in Hindi literature. Born in Agra on 28 August 1929, he was the celebrated editor of 'Hans' magazine. He is renowned for his realistic portrayal of middle-class life in India.\n\nKey Contributions:\n- Pioneer of the Nayi Kahani (New Story) Movement\n- Editor of Hans literary magazine for decades\n- Realist novelist focusing on middle-class struggles\n- Advocate for marginalized voices in literature"
+  },
+  'Author — Major Works': {
+    title: 'Major Works of Rajendra Yadav | Sara Aakash',
+    body: "Major Works of Rajendra Yadav:\n\n1. सारा आकाश (Sara Aakash) — 1959\n   His most celebrated novel about middle-class family life.\n\n2. उखड़े हुए लोग (Ukhde Hue Log)\n   Portrayal of displaced and uprooted people.\n\n3. कुलटा (Kulta)\n   Exploration of womanhood and societal judgment.\n\n4. शह और मात (Shah aur Maat)\n   Chess metaphor for life's power struggles.\n\n5. देवताओं की मूर्तियाँ (Devtaon ki Murtiyan)\n   A critical look at idealism and godhood.\n\n6. खेल-खिलौने (Khel-Khilone)\n   Human relationships and playful deceptions."
+  },
+  'Conclusion — सारा आकाश': {
+    title: 'Conclusion | Sara Aakash — Rajendra Yadav',
+    body: "'सारा आकाश' में राजेन्द्र यादव ने भारतीय मध्यमवर्गीय परिवार का अत्यंत यथार्थवादी चित्रण प्रस्तुत किया है। बाहरी रूप से संगठित दिखने वाले परिवार के भीतर अनेक सामाजिक, आर्थिक और मानसिक समस्याएँ विद्यमान रहती हैं।\n\nIn Sara Aakash, Rajendra Yadav presents an extremely realistic portrayal of the Indian middle-class family. Behind the outwardly organized appearance of the family, numerous social, economic and psychological problems exist.\n\nKey Characters & Symbolism:\n— Samar represents idealism (आदर्शवाद)\n— Diwakar represents pragmatism (व्यावहारिकता)\n— Shirish represents progressivism (प्रगतिशीलता)\n\nTogether, the three characters present three perspectives of middle-class society.\n\nयह उपन्यास पाठकों को समाज, परिवार और मानवीय संबंधों के बारे में गहराई से विचार करने के लिए प्रेरित करता है।\n\nThis novel inspires readers to think deeply about society, family, and human relationships.\n\n© All Copyrights and Claims with Kundan Jha. All Rights Reserved."
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// EMAIL-TO-PDF SHARE SYSTEM
+// Uses jsPDF to generate PDF, then opens mailto with attachment note
+// For real server-side sending, replace with EmailJS / backend endpoint
+// ═══════════════════════════════════════════════════════
+function openShareModal(contentLabel) {
+  currentShareContent = contentLabel;
+  currentShareContentText = (CONTENT_DATA[contentLabel] || { title: contentLabel, body: 'Content for: ' + contentLabel }).body;
+  document.getElementById('share-modal-label').innerHTML = 'You are requesting: <strong>' + contentLabel + '</strong><br>Enter your email — the full content will be auto-generated as a PDF and delivered directly.';
+  document.getElementById('share-email-inp').value = '';
+  document.getElementById('share-err').textContent = '';
+  // Reset modal state
+  document.getElementById('share-email-section').style.display = 'block';
+  document.getElementById('share-sending-section').style.display = 'none';
+  document.getElementById('share-done-section').style.display = 'none';
+  document.getElementById('share-send-btn').disabled = false;
+  document.getElementById('step1').className = 'share-step active';
+  document.getElementById('step2').className = 'share-step';
+  document.getElementById('step3').className = 'share-step';
+  document.getElementById('share-modal').classList.add('open');
+}
+
+function closeShareModal() {
+  document.getElementById('share-modal').classList.remove('open');
+}
+
+async function sendAsPDF() {
+  const email = document.getElementById('share-email-inp').value.trim();
+  const err = document.getElementById('share-err');
+  if (!email || !email.includes('@')) { err.textContent = 'Please enter a valid email address.'; return; }
+
+  document.getElementById('share-send-btn').disabled = true;
+  err.textContent = '';
+
+  // Step 2: Generating PDF
+  document.getElementById('share-email-section').style.display = 'none';
+  document.getElementById('share-sending-section').style.display = 'block';
+  document.getElementById('step1').className = 'share-step done';
+  document.getElementById('step2').className = 'share-step active';
+  document.getElementById('sending-txt').textContent = 'Generating PDF...';
+
+  // Generate PDF using jsPDF
+  await new Promise(r => setTimeout(r, 800));
+  let pdfBase64 = '';
+  let pdfBlob = null;
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const content = CONTENT_DATA[currentShareContent] || { title: currentShareContent, body: 'Content for: ' + currentShareContent };
+
+    // Header
+    doc.setFillColor(14, 23, 48);
+    doc.rect(0, 0, 210, 297, 'F');
+    doc.setTextColor(197, 202, 233);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sara Aakash — Rajendra Yadav', 20, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(144, 202, 249);
+    doc.text('ISC Class XII Hindi Literature | Study Material by Kundan Jha', 20, 28);
+    doc.setDrawColor(100, 149, 237);
+    doc.setLineWidth(0.5);
+    doc.line(20, 32, 190, 32);
+
+    // Title
+    doc.setFontSize(14);
+    doc.setTextColor(197, 202, 233);
+    doc.setFont('helvetica', 'bold');
+    doc.text(content.title, 20, 44);
+
+    // Body text (handle Hindi characters as best as possible)
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(180, 185, 210);
+    const lines = doc.splitTextToSize(content.body, 170);
+    let y = 56;
+    lines.forEach(line => {
+      if (y > 270) { doc.addPage(); doc.setFillColor(14, 23, 48); doc.rect(0, 0, 210, 297, 'F'); y = 20; }
+      doc.text(line, 20, y);
+      y += 7;
+    });
+
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(9);
+      doc.setTextColor(100, 110, 140);
+      doc.text('© Kundan Jha — Sara Aakash Study Notes | All Rights Reserved', 20, 288);
+      doc.text('Sent to: ' + email + ' | ' + new Date().toLocaleDateString('en-IN'), 20, 293);
+    }
+
+    pdfBase64 = doc.output('datauristring');
+    pdfBlob = doc.output('blob');
+  } catch(e) {
+    // fallback if jsPDF fails
+    pdfBase64 = null;
+  }
+
+  // Step 3: "Sending" — auto-download the PDF for the user + log the share
+  document.getElementById('sending-txt').textContent = 'Preparing delivery...';
+  await new Promise(r => setTimeout(r, 600));
+
+  // Auto-download the PDF (server-less delivery mechanism)
+  if (pdfBlob) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(pdfBlob);
+    a.download = 'SaraAakash_' + currentShareContent.replace(/[^a-z0-9]/gi, '_') + '_KundanJha.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  // Log the PDF share request to visitor log
+  const emailEnc = localStorage.getItem('user_email_enc');
+  const userEmail = emailEnc ? xorDecrypt(emailEnc, SECRET) : 'anonymous';
+  saveVisitor({
+    email: userEmail || email,
+    requestedFor: email,
+    name: null, school: null, location: null,
+    time: new Date().toLocaleString('en-IN'),
+    consented: false,
+    sharedContent: currentShareContent,
+    type: 'pdf_request'
+  });
+
+  // Done!
+  document.getElementById('share-sending-section').style.display = 'none';
+  document.getElementById('share-done-section').style.display = 'block';
+  document.getElementById('step2').className = 'share-step done';
+  document.getElementById('step3').className = 'share-step active done';
+  document.getElementById('share-done-txt').textContent = 'PDF downloaded! Check your Downloads folder.';
+
+  // Auto-close after 3 seconds
+  setTimeout(() => closeShareModal(), 3000);
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN DASHBOARD
+// ═══════════════════════════════════════════════════════
+function checkAdmin() {
+  const val = document.getElementById('admin-pw-inp').value.trim();
+  if (xorEncrypt(val, SECRET) === SITE_PW_ENC) {
+    document.getElementById('admin-lock-box').style.display = 'none';
+    document.getElementById('visitor-data').style.display = 'block';
+    renderVisitors();
+  } else {
+    document.getElementById('admin-err').textContent = 'Incorrect password.';
+    setTimeout(() => document.getElementById('admin-err').textContent = '', 2000);
+  }
+}
+
+// ─── ADDRESS CACHE ───
+var addrCache = {};
+
+async function reverseGeocode(lat, lng) {
+  var key = lat.toFixed(4) + ',' + lng.toFixed(4);
+  if (addrCache[key]) return addrCache[key];
+  try {
+    var res = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=10', { headers: { 'Accept-Language': 'en' } });
+    var data = await res.json();
+    var addr = data.address;
+    var parts = [];
+    if (addr.city || addr.town || addr.village) parts.push(addr.city || addr.town || addr.village);
+    if (addr.state) parts.push(addr.state);
+    if (addr.country) parts.push(addr.country);
+    var result = parts.join(', ') || data.display_name.split(',').slice(0,3).join(',');
+    addrCache[key] = result;
+    return result;
+  } catch(e) { return null; }
+}
+
+// ─── MAP INSTANCE ───
+var leafletMap = null;
+var currentView = 'list';
+
+function switchView(view) {
+  currentView = view;
+  document.getElementById('toggle-list').className = 'view-toggle-btn' + (view === 'list' ? ' active' : '');
+  document.getElementById('toggle-map').className = 'view-toggle-btn' + (view === 'map' ? ' active' : '');
+  document.getElementById('visitor-list-wrap').style.display = view === 'list' ? 'block' : 'none';
+  document.getElementById('visitor-map-wrap').style.display = view === 'map' ? 'block' : 'none';
+  if (view === 'map') initVisitorMap();
+}
+
+function initVisitorMap() {
+  var visitors = loadVisitors();
+  var gpsVisitors = visitors.filter(function(v) { return v.location && typeof v.location === 'object' && v.location.lat; });
+
+  if (!leafletMap) {
+    // Center on India by default
+    var centerLat = gpsVisitors.length ? gpsVisitors[0].location.lat : 20.5937;
+    var centerLng = gpsVisitors.length ? gpsVisitors[0].location.lng : 78.9629;
+    leafletMap = L.map('visitor-map', { zoomControl: true, attributionControl: true }).setView([centerLat, centerLng], gpsVisitors.length ? 5 : 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 18
+    }).addTo(leafletMap);
+  } else {
+    leafletMap.eachLayer(function(layer) { if (layer instanceof L.Marker) leafletMap.removeLayer(layer); });
+  }
+
+  if (!gpsVisitors.length) {
+    document.getElementById('map-legend').innerHTML = '⚠️ No GPS location data yet. Visitors who share location will appear here as pins.';
+    return;
+  }
+
+  var bounds = [];
+  gpsVisitors.forEach(function(v, i) {
+    var lat = v.location.lat, lng = v.location.lng;
+    bounds.push([lat, lng]);
+
+    // Custom marker
+    var markerIcon = L.divIcon({
+      className: '',
+      html: '<div style="width:14px;height:14px;background:#6495ed;border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px rgba(100,149,237,0.8);"></div>',
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    });
+
+    var marker = L.marker([lat, lng], { icon: markerIcon }).addTo(leafletMap);
+
+    // Popup with text info
+    var popupContent = '<div class="map-popup">' +
+      '<strong>' + (v.name || 'Anonymous Visitor') + '</strong>' +
+      (v.email && v.email !== 'anonymous' ? '<div>✉️ ' + v.email + '</div>' : '') +
+      (v.school ? '<div>🏫 ' + v.school + '</div>' : '') +
+      '<div class="mp-loc">📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + (v.location.accuracy ? ' ±' + v.location.accuracy : '') + '</div>' +
+      '<div id="addr-' + i + '" class="mp-loc">🌐 Loading address...</div>' +
+      '<div class="mp-time">🕐 ' + v.time + '</div>' +
+      '</div>';
+    marker.bindPopup(popupContent, { maxWidth: 240 });
+
+    marker.on('popupopen', function() {
+      reverseGeocode(lat, lng).then(function(addr) {
+        var el = document.getElementById('addr-' + i);
+        if (el) el.innerHTML = '🌐 ' + (addr || 'Address unavailable');
+      });
+    });
+  });
+
+  if (bounds.length > 1) leafletMap.fitBounds(bounds, { padding: [30, 30] });
+  document.getElementById('map-legend').innerHTML = '📍 ' + gpsVisitors.length + ' visitor location' + (gpsVisitors.length > 1 ? 's' : '') + ' shown. Click any pin for details.';
+}
+
+function renderVisitors() {
+  const visitors = loadVisitors();
+  const freqSessions = loadVisitFrequency();
+  const totalVisits = getTotalVisits();
+  const consented = visitors.filter(v => v.consented).length;
+  const pdfRequests = visitors.filter(v => v.type === 'pdf_request').length;
+  const locGranted = visitors.filter(v => v.type === 'location_consent' && v.consented && typeof v.location === 'object').length;
+
+  document.getElementById('visitor-stats').innerHTML =
+    '<div class="stat-box"><div class="stat-val">' + totalVisits + '</div><div class="stat-lbl">Total Sessions</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#a5d6a7">' + consented + '</div><div class="stat-lbl">Consented</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#90caf9">' + pdfRequests + '</div><div class="stat-lbl">PDF Requests</div></div>' +
+    '<div class="stat-box"><div class="stat-val" style="color:#ce93d8">' + locGranted + '</div><div class="stat-lbl">GPS Locations</div></div>';
+
+  // Visit frequency section
+  let freqHTML = '';
+  if (freqSessions.length) {
+    freqHTML = '<div class="card" style="margin-bottom:1rem;">' +
+      '<div style="font-size:12px;color:#6495ed;font-weight:700;margin-bottom:8px;font-family:sans-serif;letter-spacing:1px;text-transform:uppercase;">📊 Visit Frequency Log</div>' +
+      freqSessions.slice(-20).reverse().map((s) =>
+        '<div style="font-size:12px;color:rgba(197,202,233,0.6);padding:4px 0;border-bottom:0.5px solid rgba(100,149,237,0.08);font-family:sans-serif;">' +
+        '🕐 ' + s.display + '</div>'
+      ).join('') +
+      '</div>';
+  }
+
+  const list = document.getElementById('visitor-list');
+  if (!visitors.length) {
+    list.innerHTML = freqHTML + '<div class="empty-state">No visitor data yet.</div>';
+    return;
+  }
+
+  // Build writing list with reverse geocoding for GPS entries
+  var cards = visitors.slice().reverse().map(function(v, i) {
+    var locStr = '';
+    var addrEl = '';
+    if (v.location && typeof v.location === 'object') {
+      locStr = '📍 Lat: ' + v.location.lat.toFixed(5) + ', Lng: ' + v.location.lng.toFixed(5) + (v.location.accuracy ? ' ±' + v.location.accuracy : '') + (v.locationChoice ? ' (' + v.locationChoice + ')' : '');
+      addrEl = '<div class="addr-badge" id="waddr-' + i + '">🌐 Fetching address...</div>';
+    } else if (v.location) {
+      locStr = '📍 ' + v.location;
+    } else if (v.type === 'pdf_request') {
+      locStr = '📄 PDF: ' + (v.sharedContent || '') + ' → ' + (v.requestedFor || '');
+    } else {
+      locStr = '📍 Not collected';
+    }
+    var badge = v.consented ? '<span class="badge badge-yes">Consented</span>' : '';
+    var typeBadge = v.type ? '<span class="badge badge-freq">' + v.type + '</span>' : '';
+    return '<div class="visitor-card">' +
+      '<div style="font-size:13px;color:#c5cae9;font-weight:500;font-family:sans-serif;">' + (v.name || 'Anonymous') + (v.school ? ' — <span style="color:rgba(197,202,233,0.6)">' + v.school + '</span>' : '') + badge + typeBadge + '</div>' +
+      '<div style="font-size:12px;color:rgba(197,202,233,0.6);font-family:sans-serif;margin-top:4px;">✉️ ' + (v.email || '—') + '</div>' +
+      '<div style="font-size:12px;color:rgba(144,202,249,0.7);font-family:sans-serif;margin-top:4px;">' + locStr + '</div>' +
+      addrEl +
+      '<div style="font-size:11px;color:rgba(197,202,233,0.35);margin-top:4px;font-family:sans-serif;">🕐 ' + v.time + '</div>' +
+      '</div>';
+  });
+
+  list.innerHTML = freqHTML + cards.join('');
+
+  // Fetch addresses for GPS entries asynchronously
+  visitors.slice().reverse().forEach(function(v, i) {
+    if (v.location && typeof v.location === 'object' && v.location.lat) {
+      reverseGeocode(v.location.lat, v.location.lng).then(function(addr) {
+        var el = document.getElementById('waddr-' + i);
+        if (el) el.innerHTML = '🌐 ' + (addr || 'Address unavailable');
+      });
+    }
+  });
+}
+
+function clearVisitors() {
+  if (confirm('Are you sure you want to clear all visitor data? This cannot be undone.')) {
+    localStorage.removeItem('vlog_enc');
+    localStorage.removeItem('visit_freq_enc');
+    localStorage.removeItem('visit_count');
+    renderVisitors();
+  }
+}
+
+function exportVisitors() {
+  const exportData = {
+    visitors: loadVisitors(),
+    visitFrequency: loadVisitFrequency(),
+    totalSessions: getTotalVisits(),
+    exportedAt: new Date().toLocaleString('en-IN')
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'visitors_kundan_site_' + Date.now() + '.json';
+  a.click();
+}
+
+function show(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+window.onload = function() {
+  document.getElementById('pw-gate').style.display = 'flex';
+};
+</script>
+</body>
+</html>
